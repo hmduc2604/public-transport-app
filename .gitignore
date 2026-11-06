@@ -1,0 +1,11 @@
+# Dependencies & build
+node_modules/
+dist/
+
+# Secrets - khong day len GitHub
+.env
+
+# Log / file tam
+*.log
+check-env.bat
+*.zip
