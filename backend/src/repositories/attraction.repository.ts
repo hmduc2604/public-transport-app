@@ -8,6 +8,8 @@ const FIELDS = `
   CAST(a.Latitude AS FLOAT) AS latitude, CAST(a.Longitude AS FLOAT) AS longitude,
   a.Category AS category, a.OpeningHours AS openingHours, a.TicketPrice AS ticketPrice,
   a.ImageUrl AS imageUrl, a.ImageCredit AS imageCredit, a.ImageSourceUrl AS imageSourceUrl,
+  a.HoursSummary AS hoursSummary, a.PriceFrom AS priceFrom, a.VisitDuration AS visitDuration,
+  a.BestTime AS bestTime, a.Tips AS tips,
   a.PopularityScore AS popularityScore, a.Status AS status,
   a.CreatedAt AS createdAt, a.UpdatedAt AS updatedAt`;
 
@@ -20,11 +22,16 @@ const COLUMNS: ColumnMap = {
   latitude: { column: 'Latitude', type: sql.Decimal(9, 6) },
   longitude: { column: 'Longitude', type: sql.Decimal(9, 6) },
   category: { column: 'Category', type: sql.NVarChar(100) },
-  openingHours: { column: 'OpeningHours', type: sql.NVarChar(255) },
+  openingHours: { column: 'OpeningHours', type: sql.NVarChar(500) },
   ticketPrice: { column: 'TicketPrice', type: sql.NVarChar(500) },
   imageUrl: { column: 'ImageUrl', type: sql.VarChar(500) },
   imageCredit: { column: 'ImageCredit', type: sql.NVarChar(300) },
   imageSourceUrl: { column: 'ImageSourceUrl', type: sql.VarChar(500) },
+  hoursSummary: { column: 'HoursSummary', type: sql.NVarChar(100) },
+  priceFrom: { column: 'PriceFrom', type: sql.NVarChar(50) },
+  visitDuration: { column: 'VisitDuration', type: sql.NVarChar(100) },
+  bestTime: { column: 'BestTime', type: sql.NVarChar(300) },
+  tips: { column: 'Tips', type: sql.NVarChar(sql.MAX) },
   popularityScore: { column: 'PopularityScore', type: sql.Int },
   status: { column: 'Status', type: sql.VarChar(20) },
 };
@@ -78,6 +85,57 @@ export const attractionRepository = {
     const pool = await getPool();
     const r = await pool.request().input('id', sql.Int, id).query(`SELECT ${FIELDS} FROM TouristAttractions a WHERE a.AttractionId = @id`);
     return r.recordset[0] ?? null;
+  },
+
+  /** Bo suu tap anh cua diem tham quan (AttractionImages) */
+  async images(attractionId: number) {
+    const pool = await getPool();
+    const r = await pool.request().input('id', sql.Int, attractionId).query(`
+      SELECT ImageId AS imageId, ImageUrl AS imageUrl, Caption AS caption, Credit AS credit,
+             SourceUrl AS sourceUrl, SortOrder AS sortOrder
+      FROM AttractionImages WHERE AttractionId = @id
+      ORDER BY SortOrder, ImageId`);
+    return r.recordset;
+  },
+
+  /** Tat ca anh bo suu tap (admin) */
+  async allImages() {
+    const pool = await getPool();
+    const r = await pool.request().query(`
+      SELECT AttractionId AS attractionId, ImageUrl AS imageUrl, Caption AS caption, Credit AS credit, SourceUrl AS sourceUrl
+      FROM AttractionImages ORDER BY AttractionId, SortOrder, ImageId`);
+    return r.recordset as any[];
+  },
+
+  /** Dem so anh trong bo suu tap cua tung diem (hien tren the "Kham pha") */
+  async imageCounts(): Promise<Map<number, number>> {
+    const pool = await getPool();
+    const r = await pool.request().query('SELECT AttractionId AS id, COUNT(*) AS total FROM AttractionImages GROUP BY AttractionId');
+    return new Map(r.recordset.map((x: any) => [x.id as number, x.total as number]));
+  },
+
+  /** Admin: thay toan bo bo suu tap anh */
+  replaceImages(
+    attractionId: number,
+    images: { imageUrl: string; caption?: string | null; credit?: string | null; sourceUrl?: string | null }[],
+  ) {
+    return withTransaction(async (tx) => {
+      await new sql.Request(tx).input('id', sql.Int, attractionId).query('DELETE FROM AttractionImages WHERE AttractionId = @id');
+      let order = 1;
+      for (const img of images) {
+        await new sql.Request(tx)
+          .input('aid', sql.Int, attractionId)
+          .input('url', sql.VarChar(500), img.imageUrl)
+          .input('cap', sql.NVarChar(200), img.caption ?? null)
+          .input('cre', sql.NVarChar(300), img.credit ?? null)
+          .input('src', sql.VarChar(500), img.sourceUrl ?? null)
+          .input('ord', sql.Int, order++)
+          .query(
+            `INSERT INTO AttractionImages (AttractionId, ImageUrl, Caption, Credit, SourceUrl, SortOrder)
+             VALUES (@aid, @url, @cap, @cre, @src, @ord)`,
+          );
+      }
+    });
   },
 
   /** Diem tham quan gan toa do (truy van so 4) */

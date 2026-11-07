@@ -36,6 +36,26 @@ function ensure<T>(value: T | null | undefined | false, message: string, code: s
 
 type Page = { page: number; pageSize: number; offset: number };
 
+/**
+ * Bo suu tap anh tren form admin: moi dong 1 anh
+ *   URL | chu thich | tac gia / giay phep | link trang nguon
+ */
+function imagesToText(images: any[]): string {
+  return images.map((i) => [i.imageUrl, i.caption ?? '', i.credit ?? '', i.sourceUrl ?? ''].join(' | ')).join('\n');
+}
+function textToImages(text: string) {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.split('|').map((s) => s.trim()))
+    .filter((p) => p[0])
+    .map(([imageUrl, caption, credit, sourceUrl]) => ({
+      imageUrl,
+      caption: caption || null,
+      credit: credit || null,
+      sourceUrl: sourceUrl || null,
+    }));
+}
+
 export const adminService = {
   /* ======================= USERS ======================= */
   async listUsers(q: Page & { search?: string; role?: string; status?: string }) {
@@ -243,26 +263,40 @@ export const adminService = {
   },
 
   /* ======================= ATTRACTIONS ======================= */
-  listAttractions: (q: { category?: string; search?: string }) =>
-    attractionRepository.list({ ...q, includeInactive: true, sort: 'popular' }),
+  async listAttractions(q: { category?: string; search?: string }) {
+    const [rows, images] = await Promise.all([
+      attractionRepository.list({ ...q, includeInactive: true, sort: 'popular' }),
+      attractionRepository.allImages(),
+    ]);
+    return rows.map((a: any) => ({
+      ...a,
+      imagesText: imagesToText(images.filter((i) => i.attractionId === a.attractionId)),
+    }));
+  },
 
   async getAttraction(id: number) {
     const a = ensure(await attractionRepository.getById(id), 'Không tìm thấy địa điểm', 'ATTRACTION_NOT_FOUND');
-    return { ...a, nearbyStations: await attractionRepository.nearbyStations(id) };
+    const [nearbyStations, images] = await Promise.all([
+      attractionRepository.nearbyStations(id),
+      attractionRepository.images(id),
+    ]);
+    return { ...a, nearbyStations, images, imagesText: imagesToText(images) };
   },
 
   async createAttraction(data: any) {
-    const { stations, ...rest } = data;
+    const { stations, imagesText, ...rest } = data;
     const id = await attractionRepository.create(rest);
     if (Array.isArray(stations)) await attractionRepository.replaceStations(id, stations);
+    if (typeof imagesText === 'string') await attractionRepository.replaceImages(id, textToImages(imagesText));
     routingService.invalidate();
     return this.getAttraction(id);
   },
 
   async updateAttraction(id: number, data: any) {
-    const { stations, ...rest } = data;
+    const { stations, imagesText, ...rest } = data;
     ensure(await attractionRepository.update(id, rest), 'Không tìm thấy địa điểm', 'ATTRACTION_NOT_FOUND');
     if (Array.isArray(stations)) await attractionRepository.replaceStations(id, stations);
+    if (typeof imagesText === 'string') await attractionRepository.replaceImages(id, textToImages(imagesText));
     routingService.invalidate();
     return this.getAttraction(id);
   },

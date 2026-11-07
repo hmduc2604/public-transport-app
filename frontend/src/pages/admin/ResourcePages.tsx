@@ -321,17 +321,28 @@ export function AttractionsAdminPage() {
         { name: 'description', label: 'Giới thiệu', type: 'textarea' },
         { name: 'history', label: 'Lịch sử', type: 'textarea' },
         { name: 'highlights', label: 'Điểm nổi bật (cách nhau bởi dấu |)', type: 'textarea' },
-        { name: 'openingHours', label: 'Giờ mở cửa' },
-        { name: 'ticketPrice', label: 'Giá vé tham khảo' },
+        { name: 'openingHours', label: 'Giờ mở cửa (chi tiết)', type: 'textarea' },
+        { name: 'hoursSummary', label: 'Giờ mở cửa (rút gọn, hiện trên thẻ)' },
+        { name: 'ticketPrice', label: 'Giá vé (chi tiết)', type: 'textarea' },
+        { name: 'priceFrom', label: 'Giá vé từ (vd: 30.000đ, Miễn phí)' },
+        { name: 'visitDuration', label: 'Thời gian tham quan gợi ý' },
+        { name: 'bestTime', label: 'Thời điểm đẹp nhất' },
+        { name: 'tips', label: 'Lưu ý (cách nhau bởi dấu |)', type: 'textarea' },
         { name: 'imageUrl', label: 'Ảnh (URL hoặc /images/attractions/...)' },
         { name: 'imageCredit', label: 'Nguồn ảnh (tác giả / giấy phép)' },
         { name: 'imageSourceUrl', label: 'Link trang nguồn ảnh', full: true },
+        {
+          name: 'imagesText',
+          label: 'Bộ sưu tập ảnh — mỗi dòng: URL | chú thích | tác giả / giấy phép | link nguồn',
+          type: 'textarea',
+        },
         { name: 'popularityScore', label: 'Điểm nổi bật (0-100)', type: 'number', defaultValue: 50 },
         { name: 'status', label: 'Trạng thái', type: 'select', options: ACTIVE_OPTIONS, only: 'edit' },
       ]}
       toPayload={(data) => ({
         ...data,
         highlights: typeof data.highlights === 'string' ? data.highlights.split('|').map((s: string) => s.trim()).filter(Boolean).join('|') : data.highlights,
+        tips: typeof data.tips === 'string' ? data.tips.split('|').map((s: string) => s.trim()).filter(Boolean).join('|') : data.tips,
       })}
       deleteLabel="Ẩn"
     />
