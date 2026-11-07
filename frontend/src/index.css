@@ -104,6 +104,8 @@ textarea.input { resize: vertical; }
 .alert-error { background: #fdecea; color: #8e2a1f; }
 .alert-info { background: #e8f1fc; color: #164b8c; }
 .alert-success { background: #e6f5ec; color: #17603f; }
+.alert-warn { background: #fff4dc; color: #7a5310; }
+.results-note { margin: -0.2rem 0 0.2rem; }
 .empty { text-align: center; padding: 3rem 1rem; display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
 .empty-icon { font-size: 2.6rem; }
 .empty-title { font-weight: 600; color: var(--ink); }

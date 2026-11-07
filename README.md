@@ -109,3 +109,15 @@ Vite đã cấu hình proxy `/api → http://localhost:5000`, nên không cần 
 Xe đạp / xe điện không có tuyến cố định: lấy xe ở trạm bất kỳ, trả ở trạm cùng loại trong bán kính 4 km.
 Sau khi đổi dữ liệu cần chạy lại `reset-db.bat` (hoặc chạy lại `01_database.sql` + `02_seed.sql`).
 
+## Chỉ đường theo đường phố thật (OSRM)
+
+Lộ trình trên bản đồ được vẽ theo đường phố thật (đi bộ, xe đạp/xe điện, xe buýt), không còn là đường chim bay. Quãng đường đi bộ thực tế cũng được dùng khi tính 4 tiêu chí **Nhanh nhất / Rẻ nhất / Ít đi bộ / Ít chuyển tuyến**.
+
+| Bước | Cách làm |
+|---|---|
+| Cài 1 lần | Chạy `osrm-setup.bat` (cần Docker, ~10 phút): tải bản đồ Việt Nam từ Geofabrik, cắt vùng Hà Nội bằng osmium, dựng 3 máy chủ OSRM trong Docker: đi bộ `:5001`, xe đạp `:5002`, ô tô/xe buýt `:5003`. |
+| Các lần sau | Các container tự chạy cùng Docker; `run-all.bat` cũng tự khởi động chúng. |
+| Dự phòng | Nếu máy chủ trên máy không chạy, backend dùng máy chủ công cộng `routing.openstreetmap.de` (có giới hạn tần suất); nếu cũng lỗi thì vẽ đường thẳng và giao diện báo rõ. |
+
+Metro đi trên cao nên vẫn nối thẳng giữa các ga. Cấu hình trong `backend/src/config/routing.config.ts` (`roadRouting`), tắt bằng `ROAD_ROUTING=false` trong `backend/.env`.
+

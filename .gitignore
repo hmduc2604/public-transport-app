@@ -9,3 +9,4 @@ dist/
 *.log
 check-env.bat
 *.zip
+osrm-data/

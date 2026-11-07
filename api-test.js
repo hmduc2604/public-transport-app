@@ -8,6 +8,7 @@ async function call(method, path, body, token) {
 }
 function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${cond ? 'PASS' : 'FAIL'}  ${name} ${info}`); }
 (async () => {
+  const SUF = Date.now().toString(36).toUpperCase(); // ma test khong trung giua cac lan chay
   let r = await call('POST', '/auth/login', { email: 'an@example.com', password: '123456' });
   check('login user', r.status === 200 && r.j.data.token, r.status);
   const tok = r.j?.data?.token;
@@ -49,11 +50,11 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
   r = await call('POST', '/admin/tickets/verify', { qrData: payload.slice(0, -2) + 'ZZ' }, at); check('QR gia -> sai chu ky', r.j?.data?.valid === false, r.j?.data?.reason);
   r = await call('GET', '/admin/users?page=1&pageSize=10', null, at); check('admin users', r.j?.data?.total === 4);
   r = await call('GET', '/admin/orders?status=PAID', null, at); check('admin orders', r.status === 200, r.j?.data?.total);
-  r = await call('POST', '/admin/stations', { stationCode: 'BUS-TEST', stationName: 'Tram test', latitude: 21.03, longitude: 105.85, transportTypeId: 1 }, at);
+  r = await call('POST', '/admin/stations', { stationCode: 'BUS-TEST-' + SUF, stationName: 'Tram test', latitude: 21.03, longitude: 105.85, transportTypeId: 1 }, at);
   check('admin create station', r.status === 201, r.j?.data?.stationId); const sid = r.j?.data?.stationId;
-  r = await call('POST', '/admin/routes', { routeCode: 'BUSTEST', routeName: 'Tuyen test', transportTypeId: 1, stations: [{ stationId: 1 }, { stationId: sid }] }, at);
+  r = await call('POST', '/admin/routes', { routeCode: 'BUSTEST' + SUF, routeName: 'Tuyen test', transportTypeId: 1, stations: [{ stationId: 1 }, { stationId: sid }] }, at);
   check('admin create route + stations', r.status === 201 && r.j.data.stations.length === 2); const rid = r.j?.data?.routeId;
-  r = await call('POST', '/admin/trips', { routeId: rid, vehicleId: 1, tripCode: 'BUSTEST-T1', departureTime: '09:00', arrivalTime: '09:20' }, at);
+  r = await call('POST', '/admin/trips', { routeId: rid, vehicleId: 1, tripCode: 'BUSTEST' + SUF + '-T1', departureTime: '09:00', arrivalTime: '09:20' }, at);
   check('admin create trip + stoptimes', r.status === 201 && r.j.data.stopTimes.length === 2, r.j?.data?.stopTimes?.map((s) => s.arrivalTime).join(','));
   r = await call('DELETE', `/admin/trips/${r.j?.data?.tripId}`, null, at); check('admin delete trip', r.status === 200);
   r = await call('DELETE', `/admin/routes/${rid}`, null, at); check('admin soft delete route', r.status === 200);

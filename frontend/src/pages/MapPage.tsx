@@ -241,8 +241,16 @@ export default function MapPage() {
         {result && (
           <div className="planner-results">
             <div className="results-head small muted">
-              {result.routes.length} phương án · tính trong {result.stats.computeTimeMs} ms trên graph {result.stats.graphNodes} node
+              {result.routes.length} phương án · sắp xếp theo tiêu chí <strong>{PREFERENCE_META[result.preference].label}</strong> · tính
+              trong {result.stats.computeTimeMs} ms
             </div>
+            {result.stats.roadGeometry === false ? (
+              <div className="alert alert-warn small">
+                Không kết nối được máy chủ chỉ đường – lộ trình đang vẽ theo đường thẳng ước lượng.
+              </div>
+            ) : (
+              <div className="results-note small muted">🛣️ Đường đi vẽ theo đường phố thực tế (OpenStreetMap · OSRM)</div>
+            )}
             {result.routes.map((r) => (
               <RouteCard key={r.id} route={r} selected={selected?.id === r.id} onSelect={() => setSelectedId(r.id)} />
             ))}

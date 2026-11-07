@@ -190,7 +190,7 @@ export interface RoutingSearchResult {
   preference: RoutePreference;
   departureTime: string;
   routes: RouteResult[];
-  stats: { graphNodes: number; graphEdges: number; computeTimeMs: number };
+  stats: { graphNodes: number; graphEdges: number; computeTimeMs: number; roadGeometry?: boolean };
 }
 
 /* ---------- Tickets / Orders ---------- */

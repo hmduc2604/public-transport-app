@@ -280,7 +280,7 @@ export function buildTransitNetwork(data: TransitNetworkData, cfg: RoutingConfig
 /*  3. FIND NEAREST STATIONS (diem di / den -> cac tram ung vien)            */
 /* ------------------------------------------------------------------------ */
 
-interface AccessCandidate {
+export interface AccessCandidate {
   stationId: number;
   distance: number;
   duration: number;
@@ -388,6 +388,15 @@ export function makeWeight(
 /* ------------------------------------------------------------------------ */
 /*  5. PATH -> STEPS  (gop cac canh lien tiep thanh cac buoc de hien thi)    */
 /* ------------------------------------------------------------------------ */
+
+/** Cau huong dan cho 1 buoc (dung lai khi cap nhat quang duong thuc te) */
+export function instructionFor(step: RouteStep): string {
+  if (step.mode === 'WALK') return `Đi bộ ${formatDistance(step.distance)} đến ${step.to.name}`;
+  if (step.mode === 'BICYCLE' || step.mode === 'ELECTRIC_VEHICLE') {
+    return `${MODE_LABEL[step.mode]}: lấy xe tại ${step.from.name}, trả xe tại ${step.to.name} (${formatDistance(step.distance)})`;
+  }
+  return `Đi ${MODE_LABEL[step.mode]} ${step.routeCode} từ ${step.from.name} đến ${step.to.name} (${step.numStops} trạm)`;
+}
 
 function formatDistance(m: number): string {
   return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1).replace('.', ',')} km`;
@@ -553,13 +562,7 @@ export function pathToSteps(
         path: s.path,
         instruction: '',
       };
-      if (step.mode === 'WALK') {
-        step.instruction = `Đi bộ ${formatDistance(step.distance)} đến ${step.to.name}`;
-      } else if (step.mode === 'BICYCLE' || step.mode === 'ELECTRIC_VEHICLE') {
-        step.instruction = `${MODE_LABEL[step.mode]}: lấy xe tại ${step.from.name}, trả xe tại ${step.to.name} (${formatDistance(step.distance)})`;
-      } else {
-        step.instruction = `Đi ${MODE_LABEL[step.mode]} ${step.routeCode} từ ${step.from.name} đến ${step.to.name} (${step.numStops} trạm)`;
-      }
+      step.instruction = instructionFor(step);
       return step;
     });
 }
@@ -576,10 +579,23 @@ export interface PlanQuery {
   departureMinutes: number;
   /** TransportTypeId ma nguoi dung dang co ve thang con han */
   passTransportTypeIds?: number[];
+  /**
+   * Quang duong di bo THUC TE (met, theo duong pho - lay tu OSRM) thay cho
+   * uoc luong duong chim bay x he so. Key = StationId.
+   */
+  walkOverrides?: {
+    origin?: Map<number, number>;
+    destination?: Map<number, number>;
+    /** di bo thang tu diem di toi diem den */
+    direct?: number;
+  };
 }
 
 export interface PlanOutput {
+  /** Top N da xep hang theo tieu chi */
   routes: RouteResult[];
+  /** Tat ca phuong an ung vien (da xep hang) - de service bo sung hinh hoc duong that roi xep lai */
+  candidates: RouteResult[];
   visitedNodes: number;
 }
 
@@ -595,7 +611,7 @@ function hashId(s: string): string {
   return 'R' + (h >>> 0).toString(36).toUpperCase();
 }
 
-function summarize(steps: RouteStep[], pref: RoutePreference, coveredTypes: Set<number>): RouteResult {
+export function summarize(steps: RouteStep[], pref: RoutePreference, coveredTypes: Set<number>): RouteResult {
   const ride = steps.filter((s) => s.mode !== 'WALK');
   const walk = steps.filter((s) => s.mode === 'WALK');
   const totalFare = ride.reduce((sum, s) => sum + s.fare, 0);
@@ -636,31 +652,40 @@ export function planRoutes(net: TransitNetwork, query: PlanQuery, cfg: RoutingCo
     extra.get(from)!.push(e);
   };
 
-  for (const c of accessCandidates(net, origin, cfg)) {
+  const ov = query.walkOverrides ?? {};
+  // Quang duong di bo: uu tien so lieu duong pho thuc te (OSRM), khong co thi dung uoc luong
+  const walkOf = (c: AccessCandidate, real?: Map<number, number>) => {
+    const d = real?.get(c.stationId);
+    return d !== undefined ? { distance: d, duration: d / cfg.speedMPerMin.WALK } : c;
+  };
+  for (const cand of accessCandidates(net, origin, cfg)) {
+    const c = walkOf(cand, ov.origin);
     addExtra(NodeId.ORIGIN, {
-      to: NodeId.station(c.stationId),
+      to: NodeId.station(cand.stationId),
       kind: 'WALK',
       mode: 'WALK',
       duration: round1(c.duration),
       distance: Math.round(c.distance),
       fare: 0,
-      toStationId: c.stationId,
+      toStationId: cand.stationId,
     });
   }
-  for (const c of accessCandidates(net, destination, cfg)) {
-    addExtra(NodeId.station(c.stationId), {
+  for (const cand of accessCandidates(net, destination, cfg)) {
+    const c = walkOf(cand, ov.destination);
+    addExtra(NodeId.station(cand.stationId), {
       to: NodeId.DEST,
       kind: 'WALK',
       mode: 'WALK',
       duration: round1(c.duration),
       distance: Math.round(c.distance),
       fare: 0,
-      fromStationId: c.stationId,
+      fromStationId: cand.stationId,
     });
   }
   const direct =
+    ov.direct ??
     haversineMeters(origin.latitude, origin.longitude, destination.latitude, destination.longitude) *
-    cfg.walkDetourFactor;
+      cfg.walkDetourFactor;
   if (direct <= cfg.maxDirectWalkM) {
     addExtra(NodeId.ORIGIN, {
       to: NodeId.DEST,
@@ -715,29 +740,55 @@ export function planRoutes(net: TransitNetwork, query: PlanQuery, cfg: RoutingCo
     run(query.preference, lineKeys);
   }
 
-  // 6.3 Xep hang: giu phuong an theo tieu chi nguoi dung o dau, phan con lai
-  //     sap theo diem tong hop (thoi gian + quy doi tien + di bo + chuyen tuyen)
-  const [first, ...rest] = results;
-  const score = (r: RouteResult) =>
-    r.totalDuration + r.fareToPay / 1000 + r.walkingDistance / 100 + r.transfers * 5;
-  rest.sort((a, b) => score(a) - score(b));
-  const top = first ? [first, ...rest].slice(0, cfg.maxResults) : [];
+  // Them 1 phuong an "khac han": ne TAT CA tuyen da dung (vd: da co xe dap + xe dien -> tim xe buyt / Metro)
+  const lineKeyOf = (s: RouteStep) => (s.routeId ? String(s.routeId) : `SHARE-${s.mode}`);
+  const used = new Set(results.flatMap((r) => r.steps.filter((s) => s.mode !== 'WALK').map(lineKeyOf)));
+  if (used.size > 1) run(query.preference, used);
 
-  // 6.4 Gan nhan "Nhanh nhat / Re nhat / It di bo / It chuyen tuyen"
-  const metric: Record<RoutePreference, (r: RouteResult) => number> = {
-    FASTEST: (r) => r.totalDuration,
-    CHEAPEST: (r) => r.fareToPay,
-    LEAST_WALKING: (r) => r.walkingDistance,
-    FEWEST_TRANSFERS: (r) => r.transfers,
-  };
+  const candidates = rankRoutes(results, query.preference);
+  return { routes: rankRoutes(results, query.preference, cfg.maxResults), candidates, visitedNodes };
+}
+
+/** Gia tri cua 1 phuong an theo tung tieu chi (cang nho cang tot) */
+export const PREFERENCE_METRIC: Record<RoutePreference, (r: RouteResult) => number> = {
+  FASTEST: (r) => r.totalDuration,
+  CHEAPEST: (r) => r.fareToPay,
+  LEAST_WALKING: (r) => r.walkingDistance,
+  FEWEST_TRANSFERS: (r) => r.transfers,
+};
+
+/** Diem tong hop: thoi gian + quy doi tien + di bo + chuyen tuyen (dung de pha hoa / xep phan con lai) */
+const overallScore = (r: RouteResult) => r.totalDuration + r.fareToPay / 1000 + r.walkingDistance / 100 + r.transfers * 5;
+
+/**
+ * Xep hang:
+ *  - Phuong an dau tien = tot nhat theo TIEU CHI NGUOI DUNG CHON (hoa thi so diem tong hop)
+ *  - Phan con lai sap theo diem tong hop, uu tien phuong an khac han nhau
+ *  - Gan nhan "Nhanh nhat / Re nhat / It di bo / It chuyen tuyen" cho phuong an thang moi tieu chi
+ */
+export function rankRoutes(routes: RouteResult[], preference: RoutePreference, limit = routes.length): RouteResult[] {
+  if (routes.length === 0) return [];
+  const metric = PREFERENCE_METRIC[preference];
+  const byPref = [...routes].sort((a, b) => metric(a) - metric(b) || overallScore(a) - overallScore(b));
+  const [first, ...rest] = byPref;
+  rest.sort((a, b) => overallScore(a) - overallScore(b));
+  // Uu tien su da dang: phuong an trung chuoi tuyen (vd. cung "Di bo -> Xe dap -> Di bo",
+  // chi khac tram) xep sau cac phuong an khac han
+  const seenSummary = new Set([first.summary]);
+  const unique: RouteResult[] = [];
+  const similar: RouteResult[] = [];
+  for (const r of rest) {
+    (seenSummary.has(r.summary) ? similar : unique).push(r);
+    seenSummary.add(r.summary);
+  }
+  const top = [first, ...unique, ...similar].slice(0, limit).map((r) => ({ ...r, labels: [] as RoutePreference[] }));
+
   for (const p of ROUTE_PREFERENCES) {
-    if (top.length === 0) break;
-    const best = Math.min(...top.map(metric[p]));
-    const winner = top.find((r) => metric[p](r) === best);
+    const best = Math.min(...top.map(PREFERENCE_METRIC[p]));
+    const winner = p === preference ? top[0] : top.find((r) => PREFERENCE_METRIC[p](r) === best);
     winner?.labels.push(p);
   }
-
-  return { routes: top, visitedNodes };
+  return top;
 }
 
 export function describeDeparture(minutes: number): string {

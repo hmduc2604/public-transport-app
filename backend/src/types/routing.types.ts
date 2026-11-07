@@ -92,5 +92,7 @@ export interface RoutingSearchResult {
     graphNodes: number;
     graphEdges: number;
     computeTimeMs: number;
+    /** true: duong ve theo duong pho that (OSRM); false: may chu chi duong loi -> duong thang uoc luong */
+    roadGeometry: boolean;
   };
 }
