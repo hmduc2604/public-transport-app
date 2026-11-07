@@ -121,6 +121,9 @@ export interface Attraction {
   openingHours: string | null;
   ticketPrice: string | null;
   imageUrl: string | null;
+  /** Tac gia / giay phep anh (bat buoc ghi nguon voi anh CC BY, CC BY-SA) */
+  imageCredit?: string | null;
+  imageSourceUrl?: string | null;
   popularityScore: number;
   status: string;
   distanceMeters?: number;

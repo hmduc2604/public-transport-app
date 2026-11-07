@@ -172,6 +172,9 @@ textarea.input { resize: vertical; }
 .cover { width: 100%; height: 150px; object-fit: cover; display: block; }
 .cover-tall { height: 260px; border-radius: var(--radius); }
 .cover-placeholder { display: grid; place-items: center; }
+.detail-cover { margin: 0; min-width: 0; }
+.image-credit { font-size: 0.72rem; color: var(--muted); margin-top: 0.3rem; }
+.image-credit a { color: inherit; text-decoration: underline dotted; }
 .cover-placeholder span { font-size: 3rem; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25)); }
 .recommend { margin-top: 1.6rem; }
 

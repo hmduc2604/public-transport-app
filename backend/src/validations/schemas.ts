@@ -128,6 +128,8 @@ export const schemas = {
     openingHours: { type: 'string', max: 255, label: 'Giờ mở cửa' },
     ticketPrice: { type: 'string', max: 500, label: 'Giá vé' },
     imageUrl: { type: 'string', max: 500, label: 'Ảnh' },
+    imageCredit: { type: 'string', max: 300, label: 'Nguồn ảnh (tác giả / giấy phép)' },
+    imageSourceUrl: { type: 'string', max: 500, label: 'Link trang nguồn ảnh' },
     popularityScore: { type: 'number', integer: true, min: 0, max: 100, label: 'Điểm nổi bật' },
     status: { type: 'enum', values: STATUS_ACTIVE, label: 'Trạng thái' },
     stations: { type: 'array', label: 'Trạm gần' },
