@@ -13,7 +13,7 @@ React + TypeScript + Leaflet  ──REST /api/v1 + JWT──>  Node.js + Express
 public-transport-app/
 ├── database/            ← Script SQL Server
 │   ├── 01_database.sql          Tạo DB PublicTransportDBV2 + 17 bảng + index
-│   ├── 02_seed.sql              Dữ liệu mẫu (27 trạm, 17 tuyến, ~700 chuyến, 20 điểm tham quan...)
+│   ├── 02_seed.sql              Dữ liệu mẫu: 571 trạm vị trí thật, 22 tuyến (20 bus + Metro 2A, 3.1), 20 điểm tham quan...
 │   ├── 03_test_queries.sql      Truy vấn kiểm thử (nearby, join, thống kê)
 │   └── 04_upgrade_existing_db.sql  Dùng khi ĐÃ CÓ DB cũ, không muốn xóa dữ liệu
 ├── backend/             ← API (tách riêng, xem backend/README.md)
@@ -96,3 +96,16 @@ Vite đã cấu hình proxy `/api → http://localhost:5000`, nên không cần 
 6. **Mua vé cho lộ trình** → vé lượt được chọn sẵn → **Thanh toán (mô phỏng)** → **QR e-ticket**.
 7. Đăng nhập `admin@example.com` → Dashboard thống kê → Vé & Soát vé: dán nội dung QR → vé lượt chuyển **Đã dùng**.
 8. Admin thêm trạm/tuyến mới → graph tìm đường tự xây lại → tìm đường thấy tuyến mới.
+
+## Nguồn dữ liệu vị trí trạm
+
+| Loại | Số trạm | Nguồn |
+|---|---|---|
+| Xe buýt | 453 điểm dừng, 20 tuyến | Danh sách tuyến, giờ chạy, giá vé 7.000đ theo [Vinpearl – Bản đồ xe bus Hà Nội](https://vinpearl.com/vi/ban-do-xe-bus-ha-noi). Bài viết không có tọa độ nên vị trí và thứ tự điểm dừng lấy từ OpenStreetMap (route relation của từng tuyến), khoảng cách đo dọc theo đường. |
+| Metro | 20 ga (2A: 12 ga, 3.1: 8 ga) | Tọa độ ga từ [metrohanoi.vn](https://metrohanoi.vn/line/map). Giá vé theo quãng đường 8.000–15.000đ là mô phỏng. |
+| Xe đạp | 49 trạm TNGo | Danh sách + địa chỉ theo [bài viết trên dantocphattrien.vietnamnet.vn](https://dantocphattrien.vietnamnet.vn/danh-sach-cac-tram-xe-dap-cong-cong-cho-thue-o-ha-noi-46898.html), tọa độ từ OpenStreetMap. |
+| Xe điện | 49 trạm | **Cùng vị trí** với trạm xe đạp (`BIKE-xxx` ↔ `EV-xxx`); trên bản đồ hiển thị chung 1 marker. |
+
+Xe đạp / xe điện không có tuyến cố định: lấy xe ở trạm bất kỳ, trả ở trạm cùng loại trong bán kính 4 km.
+Sau khi đổi dữ liệu cần chạy lại `reset-db.bat` (hoặc chạy lại `01_database.sql` + `02_seed.sql`).
+

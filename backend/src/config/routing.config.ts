@@ -29,10 +29,11 @@ export const ROUTING_CONFIG = {
   /** Thoi gian dung moi tram (phut) */
   dwellMinutesPerStop: 1,
 
-  /** Gia ve mac dinh moi lan len xe neu khong co FareRule (VND) */
+  /** Gia ve mac dinh moi lan len xe neu khong co FareRule (VND)
+   *  Bus: dong gia 7.000d/luot (bang gia pho bien cac tuyen buyt Ha Noi) */
   defaultFare: {
     WALK: 0,
-    BUS: 10000,
+    BUS: 7000,
     METRO: 12000,
     BICYCLE: 5000,
     ELECTRIC_VEHICLE: 10000,
@@ -49,6 +50,11 @@ export const ROUTING_CONFIG = {
   minAccessStations: 3,
   /** So tram gan nhat toi da duoc xet */
   maxAccessStations: 8,
+  /**
+   * Ngoai ra, moi loai phuong tien lay them toi da N tram gan nhat trong ban kinh
+   * accessRadiusM -> diem dung bus day dac khong "che" mat ga Metro / tram xe dap.
+   */
+  perModeAccessStations: 2,
   /** Khoang cach toi da de di bo chuyen tram (met) */
   transferRadiusM: 600,
   /** Khoang cach toi da de goi y di bo thang tu diem di toi diem den (met) */

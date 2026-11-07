@@ -306,6 +306,17 @@ export function accessCandidates(
     }
   });
 
+  // Moi loai phuong tien: them vai tram gan nhat (bus dung day dac khong che mat Metro / xe dap)
+  const perMode = new Map<number, number>();
+  for (const c of all) {
+    if (c.distance > cfg.accessRadiusM) break;
+    const mode = net.stations.get(c.stationId)!.transportTypeId;
+    const n = perMode.get(mode) ?? 0;
+    if (n >= cfg.perModeAccessStations) continue;
+    perMode.set(mode, n + 1);
+    byStation.set(c.stationId, c);
+  }
+
   // Diem tham quan: uu tien du lieu AttractionStations (khoang cach di bo thuc te)
   if (loc.attractionId) {
     for (const a of net.attractionAccess.get(loc.attractionId) ?? []) {

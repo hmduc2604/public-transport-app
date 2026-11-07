@@ -1,6 +1,7 @@
 /**
  * Ban do Leaflet + OpenStreetMap
  *  - Marker tram theo loai phuong tien (Bus / Metro / Xe dap / Xe dien)
+ *  - Tram xe dap + xe dien CUNG VI TRI -> gop thanh 1 marker (popup liet ke ca 2)
  *  - Marker diem tham quan
  *  - Ve lo trinh (polyline) theo tung buoc, moi phuong tien 1 mau, di bo net dut
  */
@@ -29,6 +30,42 @@ function pinIcon(key: string, emoji: string, color: string, size = 30, extraClas
     );
   }
   return iconCache.get(k)!;
+}
+
+/** Marker gop nhieu phuong tien tai cung 1 diem (vd. tram xe dap + xe dien) */
+function comboIcon(modes: TransportMode[], size = 30) {
+  const key = `combo-${modes.join('+')}-${size}`;
+  if (!iconCache.has(key)) {
+    const colors = modes.map((m) => MODE_META[m].color);
+    const step = 100 / colors.length;
+    const bg = `linear-gradient(135deg, ${colors.map((c, i) => `${c} ${i * step}% ${(i + 1) * step}%`).join(', ')})`;
+    const icons = modes.map((m) => MODE_META[m].icon).join('');
+    iconCache.set(
+      key,
+      L.divIcon({
+        className: 'pin-wrap',
+        html: `<div class="pin pin-combo" style="background:${bg};width:${size}px;height:${size}px;font-size:${Math.round(size * 0.36)}px">${icons}</div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        popupAnchor: [0, -size / 2],
+      }),
+    );
+  }
+  return iconCache.get(key)!;
+}
+
+/** Kich thuoc marker: diem dung bus rat day -> nho hon */
+const PIN_SIZE: Record<TransportMode, number> = { WALK: 20, BUS: 20, METRO: 28, BICYCLE: 26, ELECTRIC_VEHICLE: 26 };
+
+/** Gom cac tram trung toa do (lam tron ~1m) thanh 1 nhom */
+function groupByPosition(stations: Station[]) {
+  const groups = new Map<string, Station[]>();
+  for (const s of stations) {
+    const k = `${s.latitude.toFixed(5)},${s.longitude.toFixed(5)}`;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(s);
+  }
+  return [...groups.values()];
 }
 
 const originIcon = () => pinIcon('origin', 'A', '#13294B', 36, 'pin-endpoint');
@@ -89,7 +126,10 @@ export function MapView({
     return route.steps.flatMap((s) => s.path);
   }, [route, origin, destination]);
 
-  const shownStations = visibleModes ? stations.filter((s) => visibleModes.has(s.mode)) : stations;
+  const stationGroups = useMemo(
+    () => groupByPosition(visibleModes ? stations.filter((s) => visibleModes.has(s.mode)) : stations),
+    [stations, visibleModes],
+  );
 
   return (
     <MapContainer center={HANOI_CENTER} zoom={14} className={className ?? 'map'} scrollWheelZoom>
@@ -100,18 +140,50 @@ export function MapView({
       {onMapClick && <ClickHandler onClick={onMapClick} />}
       <FitTo points={routePoints} focus={focus} />
 
-      {shownStations.map((s) => {
-        const m = MODE_META[s.mode];
+      {stationGroups.map((group) => {
+        const first = group[0];
+        if (group.length === 1) {
+          const m = MODE_META[first.mode];
+          return (
+            <Marker
+              key={`s-${first.stationId}`}
+              position={[first.latitude, first.longitude]}
+              icon={pinIcon(first.mode, m.icon, m.color, PIN_SIZE[first.mode])}
+            >
+              <Popup>
+                <div className="popup">
+                  <div className="popup-kicker" style={{ color: m.color }}>
+                    {m.icon} {m.label} · {first.stationCode}
+                  </div>
+                  <strong>{first.stationName}</strong>
+                  {first.address && <div className="muted">{first.address}</div>}
+                  {stationPopup?.(first)}
+                </div>
+              </Popup>
+            </Marker>
+          );
+        }
+        // Nhieu phuong tien chung 1 vi tri (tram xe dap + xe dien)
+        const modes = [...new Set(group.map((x) => x.mode))];
         return (
-          <Marker key={`s-${s.stationId}`} position={[s.latitude, s.longitude]} icon={pinIcon(s.mode, m.icon, m.color, 26)}>
+          <Marker
+            key={`g-${group.map((x) => x.stationId).join('-')}`}
+            position={[first.latitude, first.longitude]}
+            icon={comboIcon(modes)}
+          >
             <Popup>
               <div className="popup">
-                <div className="popup-kicker" style={{ color: m.color }}>
-                  {m.icon} {m.label} · {s.stationCode}
-                </div>
-                <strong>{s.stationName}</strong>
-                {s.address && <div className="muted">{s.address}</div>}
-                {stationPopup?.(s)}
+                <div className="popup-kicker">{modes.map((m) => MODE_META[m].label).join(' + ')} · cùng vị trí</div>
+                {first.address && <div className="muted">{first.address}</div>}
+                {group.map((x) => (
+                  <div key={x.stationId} className="popup-sub">
+                    <div className="popup-kicker" style={{ color: MODE_META[x.mode].color }}>
+                      {MODE_META[x.mode].icon} {MODE_META[x.mode].label} · {x.stationCode}
+                    </div>
+                    <strong>{x.stationName}</strong>
+                    {stationPopup?.(x)}
+                  </div>
+                ))}
               </div>
             </Popup>
           </Marker>

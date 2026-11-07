@@ -216,7 +216,7 @@ export function SchedulesPage() {
         { key: 'status', label: 'Trạng thái', render: status },
       ]}
       fields={[
-        { name: 'tripCode', label: 'Mã chuyến', required: true, placeholder: 'BUS01-T051' },
+        { name: 'tripCode', label: 'Mã chuyến', required: true, placeholder: '09A-T051' },
         { name: 'routeId', label: 'Tuyến', type: 'select', required: true, optionsLoader: routeOptions },
         { name: 'vehicleId', label: 'Phương tiện', type: 'select', required: true, optionsLoader: vehicleOptions },
         { name: 'departureTime', label: 'Giờ xuất phát', type: 'time', required: true },
