@@ -7,7 +7,8 @@ const FIELDS = `
   a.History AS history, a.Highlights AS highlights, a.Address AS address,
   CAST(a.Latitude AS FLOAT) AS latitude, CAST(a.Longitude AS FLOAT) AS longitude,
   a.Category AS category, a.OpeningHours AS openingHours, a.TicketPrice AS ticketPrice,
-  a.ImageUrl AS imageUrl, a.PopularityScore AS popularityScore, a.Status AS status,
+  a.ImageUrl AS imageUrl, a.ImageCredit AS imageCredit, a.ImageSourceUrl AS imageSourceUrl,
+  a.PopularityScore AS popularityScore, a.Status AS status,
   a.CreatedAt AS createdAt, a.UpdatedAt AS updatedAt`;
 
 const COLUMNS: ColumnMap = {
@@ -22,6 +23,8 @@ const COLUMNS: ColumnMap = {
   openingHours: { column: 'OpeningHours', type: sql.NVarChar(255) },
   ticketPrice: { column: 'TicketPrice', type: sql.NVarChar(500) },
   imageUrl: { column: 'ImageUrl', type: sql.VarChar(500) },
+  imageCredit: { column: 'ImageCredit', type: sql.NVarChar(300) },
+  imageSourceUrl: { column: 'ImageSourceUrl', type: sql.VarChar(500) },
   popularityScore: { column: 'PopularityScore', type: sql.Int },
   status: { column: 'Status', type: sql.VarChar(20) },
 };

@@ -323,7 +323,9 @@ export function AttractionsAdminPage() {
         { name: 'highlights', label: 'Điểm nổi bật (cách nhau bởi dấu |)', type: 'textarea' },
         { name: 'openingHours', label: 'Giờ mở cửa' },
         { name: 'ticketPrice', label: 'Giá vé tham khảo' },
-        { name: 'imageUrl', label: 'Ảnh (URL)' },
+        { name: 'imageUrl', label: 'Ảnh (URL hoặc /images/attractions/...)' },
+        { name: 'imageCredit', label: 'Nguồn ảnh (tác giả / giấy phép)' },
+        { name: 'imageSourceUrl', label: 'Link trang nguồn ảnh', full: true },
         { name: 'popularityScore', label: 'Điểm nổi bật (0-100)', type: 'number', defaultValue: 50 },
         { name: 'status', label: 'Trạng thái', type: 'select', options: ACTIVE_OPTIONS, only: 'edit' },
       ]}

@@ -19,7 +19,20 @@ export default function AttractionDetailPage() {
     <div className="page">
       <Link to="/" className="back-link">← Khám phá</Link>
       <div className="detail-hero">
-        <AttractionCover a={a} tall />
+        <figure className="detail-cover">
+          <AttractionCover a={a} tall />
+          {a.imageUrl && a.imageCredit && (
+            <figcaption className="image-credit">
+              {a.imageSourceUrl ? (
+                <a href={a.imageSourceUrl} target="_blank" rel="noreferrer">
+                  {a.imageCredit}
+                </a>
+              ) : (
+                a.imageCredit
+              )}
+            </figcaption>
+          )}
+        </figure>
         <div className="detail-hero-text">
           <span className="chip">{categoryIcon(a.category)} {a.category}</span>
           <h1>{a.name}</h1>

@@ -121,3 +121,10 @@ Lộ trình trên bản đồ được vẽ theo đường phố thật (đi b�
 
 Metro đi trên cao nên vẫn nối thẳng giữa các ga. Cấu hình trong `backend/src/config/routing.config.ts` (`roadRouting`), tắt bằng `ROAD_ROUTING=false` trong `backend/.env`.
 
+
+## Ảnh địa điểm tham quan
+
+20 địa điểm đều có ảnh thật lấy từ [Wikimedia Commons](https://commons.wikimedia.org) (giấy phép tự do CC0 / Public domain / CC BY / CC BY-SA), lưu sẵn trong `frontend/public/images/attractions/` (rộng 1280px). Tác giả + giấy phép từng ảnh nằm ở cột `ImageCredit`, `ImageSourceUrl` của bảng `TouristAttractions`, hiển thị dưới ảnh ở trang chi tiết, và liệt kê trong `frontend/public/images/attractions/CREDITS.md`.
+
+- Database đã có sẵn dữ liệu: chạy `upgrade-db.bat` (chạy `database/05_attraction_images.sql`, không xóa dữ liệu).
+- Tải lại ảnh nếu thiếu: `download-images.bat` (chỉ tải file chưa có).

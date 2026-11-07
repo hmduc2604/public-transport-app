@@ -174,6 +174,8 @@ CREATE TABLE TouristAttractions (
     OpeningHours    NVARCHAR(255),
     TicketPrice     NVARCHAR(500)  NULL,
     ImageUrl        VARCHAR(500),
+    ImageCredit     NVARCHAR(300)  NULL,      -- tac gia / giay phep anh
+    ImageSourceUrl  VARCHAR(500)   NULL,      -- trang nguon cua anh (Wikimedia Commons)
     PopularityScore INT            NOT NULL CONSTRAINT DF_TouristAttractions_Popularity DEFAULT 50,
     Status          VARCHAR(20)    NOT NULL DEFAULT 'ACTIVE',
     CreatedAt       DATETIME2      NOT NULL DEFAULT SYSDATETIME(),
