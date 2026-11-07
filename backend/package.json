@@ -20,6 +20,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "mssql": "^11.0.1",
+    "nodemailer": "^6.9.16",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
@@ -30,6 +31,7 @@
     "@types/morgan": "^1.9.9",
     "@types/mssql": "^9.1.5",
     "@types/node": "^22.9.0",
+    "@types/nodemailer": "^6.4.17",
     "@types/qrcode": "^1.5.5",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",

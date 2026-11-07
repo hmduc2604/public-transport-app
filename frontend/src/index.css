@@ -491,3 +491,22 @@ textarea.input { resize: vertical; }
   .lightbox { padding: 3.5rem 0.5rem; }
   .lightbox-nav { top: auto; bottom: 1rem; transform: none; }
 }
+
+/* ---------- Dang ky co xac nhan ---------- */
+.steps { display: flex; gap: 0.4rem; margin-bottom: 0.9rem; font-size: 0.78rem; }
+.step { flex: 1; text-align: center; padding: 0.3rem 0.4rem; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); color: var(--muted); }
+.step.active { background: var(--ink); border-color: var(--ink); color: #fff; font-weight: 600; }
+.step.done { background: #e6f5ec; border-color: #bfe3cd; color: #17603f; }
+.channel-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.channel-option { display: flex; align-items: center; gap: 0.55rem; padding: 0.7rem 0.75rem; border: 1.5px solid var(--line); border-radius: var(--radius-sm); cursor: pointer; background: var(--surface); transition: border-color 0.15s, background 0.15s; min-width: 0; }
+.channel-option input { position: absolute; opacity: 0; pointer-events: none; }
+.channel-option.active { border-color: var(--ink); background: var(--surface-2); box-shadow: 0 0 0 3px rgba(19, 41, 75, 0.08); }
+.channel-option.disabled { opacity: 0.55; cursor: not-allowed; }
+.channel-option:focus-within { outline: 2px solid var(--ochre); outline-offset: 2px; }
+.channel-icon { font-size: 1.3rem; }
+.channel-text { display: flex; flex-direction: column; min-width: 0; }
+.channel-text .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.otp-input { text-align: center; font-size: 1.9rem; letter-spacing: 0.6em; padding-left: 0.6em; font-weight: 700; font-variant-numeric: tabular-nums; margin: 0.4rem 0 0.2rem; }
+.otp-actions { margin-top: 0.9rem; gap: 0.6rem; flex-wrap: wrap; }
+.link-btn:disabled { opacity: 0.55; cursor: default; text-decoration: none; }
+@media (max-width: 420px) { .channel-options { grid-template-columns: 1fr; } }

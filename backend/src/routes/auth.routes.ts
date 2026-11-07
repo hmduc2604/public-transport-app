@@ -6,7 +6,10 @@ import { asyncHandler as h } from '../utils/asyncHandler';
 
 const router = Router();
 
+router.get('/auth/verification-channels', h(authController.channels));
 router.post('/auth/register', h(authController.register));
+router.post('/auth/register/verify', h(authController.verify));
+router.post('/auth/register/resend', h(authController.resend));
 router.post('/auth/login', h(authController.login));
 router.post('/auth/logout', h(authController.logout));
 

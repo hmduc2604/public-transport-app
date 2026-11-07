@@ -1,14 +1,18 @@
 /** Luu trang thai dang nhap toan ung dung (JWT luu trong localStorage) */
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { User } from '../types';
+import { RegisterInput, User, VerificationInfo } from '../types';
 import { authApi } from '../services/authApi';
 import { setUnauthorizedHandler, tokenStore } from '../services/api';
 
 interface AuthState {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<User>;
-  register: (data: { fullName: string; email: string; password: string; phone?: string }) => Promise<User>;
+  /** identifier: email hoac so dien thoai */
+  login: (identifier: string, password: string) => Promise<User>;
+  /** Dang ky buoc 1: gui ma xac nhan (chua tao tai khoan) */
+  register: (data: RegisterInput) => Promise<VerificationInfo>;
+  /** Dang ky buoc 2: nhap ma dung -> tao tai khoan va dang nhap */
+  verifyRegistration: (verificationId: string, code: string) => Promise<User>;
   logout: () => void;
   refresh: () => Promise<void>;
   setUser: (u: User) => void;
@@ -54,14 +58,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser,
       logout,
       refresh,
-      login: async (email, password) => {
-        const r = await authApi.login(email, password);
+      login: async (identifier, password) => {
+        const r = await authApi.login(identifier, password);
         tokenStore.set(r.token);
         setUser(r.user);
         return r.user;
       },
-      register: async (data) => {
-        const r = await authApi.register(data);
+      register: (data) => authApi.register(data),
+      verifyRegistration: async (verificationId, code) => {
+        const r = await authApi.verifyRegistration(verificationId, code);
         tokenStore.set(r.token);
         setUser(r.user);
         return r.user;

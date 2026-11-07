@@ -4,6 +4,7 @@ dist/
 
 # Secrets - khong day len GitHub
 .env
+.env.local
 
 # Log / file tam
 *.log

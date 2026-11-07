@@ -5,6 +5,11 @@
    Script nay chi BO SUNG nhung gi backend can, chay nhieu lan khong loi.
    Neu tao moi tu dau thi chi can chay 01_database.sql + 02_seed.sql.
    ===================================================================== */
+-- Bat buoc cho unique index co dieu kien (UX_Users_Phone); sqlcmd mac dinh tat QUOTED_IDENTIFIER
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
+
 USE PublicTransportDBV2;
 GO
 

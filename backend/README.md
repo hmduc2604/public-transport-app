@@ -109,6 +109,21 @@ src/
   - Bỏ phương án "chỉ đi bộ" dài hơn 1,5 km khi đã có phương án đi xe. Tắt hẳn bằng `ROAD_ROUTING=false`; đổi máy chủ bằng `OSRM_FOOT_URL`, `OSRM_BIKE_URL`, `OSRM_CAR_URL`.
 - Graph seed: 571 trạm → ~1.300 node, ~9.500 cạnh; mỗi lần tìm ~5–35 ms.
 
+## Đăng ký có mã xác nhận (Email / SMS)
+
+| API | Mô tả |
+|---|---|
+| `GET /auth/verification-channels` | Kênh nhận mã đang dùng được: `{ email, sms, ttlMinutes, resendSeconds }` |
+| `POST /auth/register` | Bước 1: `{ fullName, email, phone, password, channel: 'EMAIL' \| 'SMS' }` → gửi mã thật, trả `{ verificationId, destination (che bớt), expiresInSeconds, resendInSeconds }`. Chưa tạo tài khoản. |
+| `POST /auth/register/verify` | Bước 2: `{ verificationId, code }` → tạo tài khoản trong `Users`, trả `{ token, user }` (201) |
+| `POST /auth/register/resend` | `{ verificationId }` → mã mới (sau 60 giây) |
+| `POST /auth/login` | `{ identifier, password }` – identifier là email **hoặc** số điện thoại (vẫn nhận field `email` cũ) |
+
+- `services/notification.service.ts`: email qua SMTP (nodemailer); SMS qua REST API của Twilio / eSMS.vn / SpeedSMS.vn (dùng `fetch`, không cần thư viện). Cấu hình trong `backend/.env.local` (xem README gốc).
+- `repositories/verification.repository.ts` + bảng `VerificationCodes`: chỉ lưu `sha256(id|mã|secret)`, so sánh bằng `timingSafeEqual`; mã sinh bằng `crypto.randomInt`.
+- Chống lạm dụng: mã hết hạn 5 phút, sai tối đa 5 lần, gửi lại sau 60 giây, tối đa 5 mã/giờ cho mỗi email/SĐT; gửi lỗi thì không lưu bản ghi rác.
+- `utils/phone.ts`: chuẩn hóa SĐT Việt Nam về `0xxxxxxxxx` (lưu DB, đăng nhập) và `+84…` (gửi SMS); unique index `UX_Users_Phone`.
+
 ## Thêm 1 API mới (quy trình chuẩn)
 1. `repositories/x.repository.ts` – viết SQL.
 2. `services/x.service.ts` – nghiệp vụ, `throw AppError.notFound(...)` khi cần.

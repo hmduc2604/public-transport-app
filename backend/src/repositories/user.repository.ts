@@ -11,6 +11,8 @@ export interface UserRow {
   status: 'ACTIVE' | 'LOCKED';
   createdAt: Date;
   updatedAt: Date | null;
+  emailVerifiedAt?: Date | null;
+  phoneVerifiedAt?: Date | null;
 }
 
 export interface UserWithPassword extends UserRow {
@@ -19,7 +21,8 @@ export interface UserWithPassword extends UserRow {
 
 const SELECT_USER = `
   SELECT UserId AS userId, FullName AS fullName, Email AS email, Phone AS phone,
-         Role AS role, Status AS status, CreatedAt AS createdAt, UpdatedAt AS updatedAt
+         Role AS role, Status AS status, CreatedAt AS createdAt, UpdatedAt AS updatedAt,
+         EmailVerifiedAt AS emailVerifiedAt, PhoneVerifiedAt AS phoneVerifiedAt
   FROM Users`;
 
 const COLUMNS: ColumnMap = {
@@ -29,6 +32,8 @@ const COLUMNS: ColumnMap = {
   phone: { column: 'Phone', type: sql.VarChar(20) },
   role: { column: 'Role', type: sql.VarChar(20) },
   status: { column: 'Status', type: sql.VarChar(20) },
+  emailVerifiedAt: { column: 'EmailVerifiedAt', type: sql.DateTime2 },
+  phoneVerifiedAt: { column: 'PhoneVerifiedAt', type: sql.DateTime2 },
 };
 
 export const userRepository = {
@@ -41,6 +46,20 @@ export const userRepository = {
         `SELECT UserId AS userId, FullName AS fullName, Email AS email, Phone AS phone, Role AS role,
                 Status AS status, CreatedAt AS createdAt, UpdatedAt AS updatedAt, PasswordHash AS passwordHash
          FROM Users WHERE Email = @email`,
+      );
+    return r.recordset[0] ?? null;
+  },
+
+  /** Dang nhap bang so dien thoai (Phone da chuan hoa 0xxxxxxxxx) */
+  async findByPhone(phone: string): Promise<UserWithPassword | null> {
+    const pool = await getPool();
+    const r = await pool
+      .request()
+      .input('phone', sql.VarChar(20), phone)
+      .query(
+        `SELECT UserId AS userId, FullName AS fullName, Email AS email, Phone AS phone, Role AS role,
+                Status AS status, CreatedAt AS createdAt, UpdatedAt AS updatedAt, PasswordHash AS passwordHash
+         FROM Users WHERE Phone = @phone`,
       );
     return r.recordset[0] ?? null;
   },
@@ -60,7 +79,15 @@ export const userRepository = {
     return r.recordset[0]?.passwordHash ?? null;
   },
 
-  create(data: { fullName: string; email: string; passwordHash: string; phone?: string | null; role?: string }) {
+  create(data: {
+    fullName: string;
+    email: string;
+    passwordHash: string;
+    phone?: string | null;
+    role?: string;
+    emailVerifiedAt?: Date | null;
+    phoneVerifiedAt?: Date | null;
+  }) {
     return insertRow('Users', 'UserId', COLUMNS, { role: 'USER', status: 'ACTIVE', ...data });
   },
 

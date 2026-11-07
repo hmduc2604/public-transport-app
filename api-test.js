@@ -14,6 +14,16 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
   const tok = r.j?.data?.token;
   r = await call('POST', '/auth/login', { email: 'an@example.com', password: 'sai' });
   check('login sai mat khau -> 401', r.status === 401, r.j?.errorCode);
+  r = await call('POST', '/auth/login', { identifier: '0901000001', password: '123456' });
+  check('login bang so dien thoai', r.status === 200 && r.j.data.user.email === 'an@example.com', r.status);
+  r = await call('GET', '/auth/verification-channels');
+  check('kenh nhan ma xac nhan', r.status === 200 && 'email' in r.j.data && 'sms' in r.j.data, JSON.stringify(r.j?.data));
+  r = await call('POST', '/auth/register', { fullName: 'Test', email: 'an@example.com', phone: '0911222333', password: '123456', channel: 'EMAIL' });
+  check('dang ky email trung -> 409', r.status === 409 && r.j.errorCode === 'EMAIL_EXISTS', r.j?.errorCode);
+  r = await call('POST', '/auth/register', { fullName: 'Test', email: 'moi@example.com', phone: '0901000002', password: '123456', channel: 'SMS' });
+  check('dang ky SDT trung -> 409', r.status === 409 && r.j.errorCode === 'PHONE_EXISTS', r.j?.errorCode);
+  r = await call('POST', '/auth/register/verify', { verificationId: 'khong-ton-tai', code: '123456' });
+  check('xac nhan ma phien khong ton tai -> 404', r.status === 404, r.j?.errorCode);
   r = await call('GET', '/users/me', null, tok); check('users/me', r.status === 200, r.j?.data?.fullName);
   r = await call('GET', '/stations'); check('stations (453 bus + 20 metro + 49 xe dap + 49 xe dien)', r.j?.data?.length === 571, r.j?.data?.length);
   r = await call('GET', '/stations/nearby?lat=21.0285&lng=105.8542&radius=1'); check('stations/nearby', r.status === 200 && r.j.data.length > 0, r.j?.data?.length);
