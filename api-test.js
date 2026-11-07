@@ -14,10 +14,10 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
   r = await call('POST', '/auth/login', { email: 'an@example.com', password: 'sai' });
   check('login sai mat khau -> 401', r.status === 401, r.j?.errorCode);
   r = await call('GET', '/users/me', null, tok); check('users/me', r.status === 200, r.j?.data?.fullName);
-  r = await call('GET', '/stations'); check('stations', r.j?.data?.length === 27, r.j?.data?.length);
+  r = await call('GET', '/stations'); check('stations (453 bus + 20 metro + 49 xe dap + 49 xe dien)', r.j?.data?.length === 571, r.j?.data?.length);
   r = await call('GET', '/stations/nearby?lat=21.0285&lng=105.8542&radius=1'); check('stations/nearby', r.status === 200 && r.j.data.length > 0, r.j?.data?.length);
   r = await call('GET', '/stations/1'); check('station detail', r.status === 200 && r.j.data.routes.length > 0, `routes=${r.j?.data?.routes?.length}`);
-  r = await call('GET', '/routes/1'); check('route detail', r.status === 200 && r.j.data.stations.length === 3);
+  r = await call('GET', '/routes/1'); check('route detail (tuyen 23: 34 diem dung)', r.status === 200 && r.j.data.stations.length === 34, r.j?.data?.stations?.length);
   r = await call('GET', '/routes/1/trips?upcoming=true'); check('route trips', r.status === 200, `trips=${r.j?.data?.length}`);
   r = await call('GET', '/attractions?category=' + encodeURIComponent('Bảo tàng')); check('attractions filter', r.j?.data?.length === 3, r.j?.data?.length);
   r = await call('GET', '/attractions/11'); check('attraction detail', r.status === 200 && Array.isArray(r.j.data.highlights), r.j?.data?.name);
@@ -26,11 +26,11 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
     r = await call('POST', '/routing/search', { origin: { attractionId: 6 }, destination: { attractionId: 16 }, preference: pref, departureTime: '08:00' }, tok);
     check('routing ' + pref, r.status === 200 && r.j.data.routes.length > 0, r.j?.data?.routes?.map((x) => `${x.summary} ${x.totalDuration}' ${x.totalFare}d`).join(' | '));
   }
-  r = await call('POST', '/routing/search', { origin: { latitude: 21.0285, longitude: 105.8542 }, destination: { stationId: 12 }, preference: 'FASTEST' });
-  check('routing toa do -> Metro Lang', r.status === 200, r.j?.data?.routes?.[0]?.summary);
+  r = await call('POST', '/routing/search', { origin: { latitude: 21.0285, longitude: 105.8542 }, destination: { stationId: 457 }, preference: 'FASTEST' });
+  check('routing toa do -> Ga Metro Lang', r.status === 200, r.j?.data?.routes?.[0]?.summary);
   r = await call('GET', '/ticket-types'); check('ticket-types', r.j?.data?.length === 6);
   r = await call('POST', '/orders', { items: [{ ticketTypeId: 1, quantity: 2 }, { ticketTypeId: 5, quantity: 1 }] }, tok);
-  check('create order', r.status === 201 && r.j.data.totalAmount === 25000, r.j?.data?.totalAmount);
+  check('create order (2 x 7000 + 5000)', r.status === 201 && r.j.data.totalAmount === 19000, r.j?.data?.totalAmount);
   const orderId = r.j?.data?.orderId;
   r = await call('POST', '/payments', { orderId, method: 'MOCK', simulate: 'FAILED' }, tok); check('payment FAILED', r.j?.data?.status === 'FAILED');
   r = await call('POST', '/payments', { orderId, method: 'MOCK' }, tok); check('payment SUCCESS -> 3 ve', r.status === 201 && r.j.data.ticketIds.length === 3, r.j?.data?.ticketIds);
@@ -39,7 +39,7 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
   r = await call('GET', '/tickets/me', null, tok); check('tickets/me', r.status === 200, `so ve=${r.j?.data?.length}`);
   r = await call('GET', `/tickets/${ticketId}/qr`, null, tok); check('ticket QR', r.j?.data?.image?.startsWith('data:image/png'), r.j?.data?.payload);
   const payload = r.j?.data?.payload;
-  r = await call('POST', '/trip-histories', { origin: 'Hỏa Lò', destination: 'Trấn Quốc', routeData: { route: 'BUS09 > BUS11' } }, tok); check('save trip', r.status === 201);
+  r = await call('POST', '/trip-histories', { origin: 'Hỏa Lò', destination: 'Trấn Quốc', routeData: { route: '09A > BIKE-SHARE' } }, tok); check('save trip', r.status === 201);
   r = await call('GET', '/trip-histories', null, tok); check('trip histories', r.status === 200, r.j?.data?.length);
   r = await call('GET', '/admin/statistics', null, tok); check('user vao admin -> 403', r.status === 403);
   r = await call('POST', '/auth/login', { email: 'admin@example.com', password: '123456' }); const at = r.j?.data?.token; check('login admin', !!at);

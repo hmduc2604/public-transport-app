@@ -66,7 +66,7 @@ SELECT r.RouteCode, r.RouteName, rs.StopOrder, s.StationCode, s.StationName, rs.
 FROM RouteStations rs
 JOIN Routes r ON rs.RouteId = r.RouteId
 JOIN Stations s ON rs.StationId = s.StationId
-WHERE r.RouteCode = 'BUS01'
+WHERE r.RouteCode = '09A'
 ORDER BY rs.StopOrder;
 
 -- 8. Lich trinh cac chuyen cua 1 tuyen -> GET /api/v1/routes/:id/trips
@@ -74,7 +74,7 @@ SELECT r.RouteCode, r.RouteName, tr.TripCode, v.VehicleCode, tr.DepartureTime, t
 FROM Trips tr
 JOIN Routes r ON tr.RouteId = r.RouteId
 JOIN Vehicles v ON tr.VehicleId = v.VehicleId
-WHERE r.RouteCode = 'BUS01'
+WHERE r.RouteCode = '09A'
 ORDER BY tr.DepartureTime;
 
 -- 9. Gio xe toi tram tiep theo (dung cho nextDepartures trong routing)
@@ -83,7 +83,7 @@ FROM StopTimes st
 JOIN Trips t ON st.TripId = t.TripId
 JOIN Routes r ON t.RouteId = r.RouteId
 JOIN Stations s ON st.StationId = s.StationId
-WHERE r.RouteCode = 'BUS01' AND st.StationId = 1
+WHERE r.RouteCode = '09A' AND st.StationId = (SELECT StartStationId FROM Routes WHERE RouteCode = '09A')
   AND st.DepartureTime >= CAST(SYSDATETIME() AS TIME)
 ORDER BY st.DepartureTime;
 
@@ -92,7 +92,7 @@ SELECT DISTINCT r.RouteId, r.RouteCode, r.RouteName
 FROM Routes r
 JOIN RouteStations rs1 ON r.RouteId = rs1.RouteId
 JOIN RouteStations rs2 ON r.RouteId = rs2.RouteId
-WHERE rs1.StationId = 1 AND rs2.StationId = 4 AND rs1.StopOrder < rs2.StopOrder;
+WHERE rs1.StationId = 132 AND rs2.StationId = 178 AND rs1.StopOrder < rs2.StopOrder;  -- 6-8 Trang Thi -> Cot co Ha Noi (tuyen 09A)
 
 -- 11. Du lieu xay graph cho routing (backend: transitNetwork.repository.ts)
 SELECT r.RouteId, r.RouteCode, r.RouteName, t.Name AS TransportType,

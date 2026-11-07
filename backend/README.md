@@ -99,8 +99,9 @@ src/
 
 - Sinh ứng viên: chạy 4 tiêu chí + "né tuyến đã dùng" để có phương án thay thế → loại trùng → xếp hạng → **Top 3**, gắn nhãn.
 - Đăng nhập + có vé tháng còn hạn → chặng đó tính 0đ (`fareToPay`).
-- Xe đạp/xe điện: ngoài tuyến cố định còn cho lấy xe ở trạm này, trả ở trạm cùng loại bất kỳ trong 4 km.
-- Graph seed: 94 node, 292 cạnh; mỗi lần tìm ~1–20 ms.
+- Xe đạp/xe điện: không có tuyến cố định — lấy xe ở trạm này, trả ở trạm cùng loại bất kỳ trong 4 km (trạm xe đạp và xe điện dùng chung vị trí).
+- Mỗi loại phương tiện luôn có tối đa 2 trạm gần nhất được xét làm điểm lên/xuống (`perModeAccessStations`), để điểm dừng bus dày đặc không che mất ga Metro / trạm xe đạp.
+- Graph seed: 571 trạm → ~1.300 node, ~9.500 cạnh; mỗi lần tìm ~5–35 ms.
 
 ## Thêm 1 API mới (quy trình chuẩn)
 1. `repositories/x.repository.ts` – viết SQL.

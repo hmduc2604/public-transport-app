@@ -7,7 +7,7 @@ import { buildTransitNetwork, planRoutes } from '../src/algorithms/routing';
 import { dijkstra, MinHeap } from '../src/algorithms/dijkstra';
 import { GraphEdge } from '../src/algorithms/graph';
 import { ResolvedLocation, RoutePreference } from '../src/types/routing.types';
-import { attractions, seedNetworkData } from './fixtures/seedNetwork';
+import { attractions, FIRST_BUS_ROUTE, seedNetworkData } from './fixtures/seedNetwork';
 
 let passed = 0;
 function test(name: string, fn: () => void) {
@@ -46,9 +46,10 @@ test('Dijkstra tim A -> B -> C (5 + 10 = 15) thay vi A -> C (20)', () => {
 console.log('\nTransit network');
 const net = buildTransitNetwork(seedNetworkData);
 test('Xay duoc graph tu du lieu seed', () => {
-  assert.equal(net.stations.size, 27);
-  assert.ok(net.graph.nodeCount > 50);
-  assert.ok(net.graph.edgeCount > 100);
+  // 453 diem dung bus + 20 ga Metro + 49 tram xe dap + 49 tram xe dien
+  assert.equal(net.stations.size, 571);
+  assert.ok(net.graph.nodeCount > 1000);
+  assert.ok(net.graph.edgeCount > 5000);
   console.log(`     nodes=${net.graph.nodeCount}, edges=${net.graph.edgeCount}, lines=${net.lines.size}`);
 });
 
@@ -73,6 +74,30 @@ test('Ho Hoan Kiem -> Van Mieu: co phuong an, phuong an dau la FASTEST', () => {
   assert.ok(out.routes.length >= 1);
   assert.equal(out.routes[0].preference, 'FASTEST');
   assert.ok(out.routes[0].steps.every((s) => s.path.length >= 2));
+});
+
+test('Xe dap va xe dien dung chung vi tri', () => {
+  const st = [...net.stations.values()];
+  const bikes = st.filter((s) => s.mode === 'BICYCLE');
+  assert.equal(bikes.length, 49);
+  for (const b of bikes) {
+    const ev = st.find((s) => s.stationCode === b.stationCode.replace('BIKE-', 'EV-'))!;
+    assert.ok(ev && ev.latitude === b.latitude && ev.longitude === b.longitude, b.stationCode);
+  }
+});
+
+test('Van Mieu -> Bao tang Dan toc hoc: co phuong an', () => {
+  const out = show('Văn Miếu → Bảo tàng Dân tộc học', place(11), place(14));
+  assert.ok(out.routes.length > 0);
+});
+
+test('Quang duong dai doc Metro 2A: Ga Cat Linh -> Ha Dong co dung Metro', () => {
+  const out = show(
+    'Gần ga Cát Linh → Gần ga Văn Khê',
+    { name: 'Gần ga Cát Linh', latitude: 21.0279, longitude: 105.8283 },
+    { name: 'Gần ga Văn Khê', latitude: 20.9551, longitude: 105.7568 },
+  );
+  assert.ok(out.routes.some((r) => r.steps.some((s) => s.mode === 'METRO')));
 });
 
 test('Ga/Hoa Lo -> Chua Tran Quoc: multi-modal, toi da 3 phuong an, khong trung lap', () => {
@@ -126,17 +151,22 @@ test('Diem gan nhau -> co phuong an di bo thang', () => {
   assert.ok(out.routes.some((r) => r.steps.length === 1 && r.steps[0].mode === 'WALK'));
 });
 
-test('nextDepartures: BUS01 tu Bo Ho sau 08:00', () => {
+test(`nextDepartures: tuyen ${FIRST_BUS_ROUTE.routeCode} sau 08:00`, () => {
+  const first = net.stations.get(FIRST_BUS_ROUTE.firstStationId)!;
+  const line = [...net.lines.values()].find((l) => l.routeId === FIRST_BUS_ROUTE.routeId)!;
+  // diem den: tram thu 6 cua tuyen
+  const destId = [...line.stopOrder.entries()].find(([, o]) => o === 6)![0];
+  const dest = net.stations.get(destId)!;
   const out = planRoutes(net, {
-    origin: { name: 'Bờ Hồ', latitude: 21.028511, longitude: 105.854444, stationId: 1 },
-    destination: { name: 'Cát Linh', latitude: 21.0276, longitude: 105.8412, stationId: 9 },
+    origin: { name: first.stationName, latitude: first.latitude, longitude: first.longitude, stationId: first.stationId },
+    destination: { name: dest.stationName, latitude: dest.latitude, longitude: dest.longitude, stationId: dest.stationId },
     preference: 'FEWEST_TRANSFERS',
     departureMinutes: departure,
   });
-  const step = out.routes.flatMap((r) => r.steps).find((s) => s.routeCode === 'BUS01');
+  const step = out.routes.flatMap((r) => r.steps).find((s) => s.routeCode === FIRST_BUS_ROUTE.routeCode);
   if (step?.nextDepartures) {
     assert.ok(step.nextDepartures.every((t) => t >= '08:00'));
-    console.log(`     BUS01 next: ${step.nextDepartures.join(', ')}`);
+    console.log(`     ${FIRST_BUS_ROUTE.routeCode} next: ${step.nextDepartures.join(', ')}`);
   }
 });
 
