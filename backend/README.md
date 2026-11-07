@@ -101,6 +101,12 @@ src/
 - Đăng nhập + có vé tháng còn hạn → chặng đó tính 0đ (`fareToPay`).
 - Xe đạp/xe điện: không có tuyến cố định — lấy xe ở trạm này, trả ở trạm cùng loại bất kỳ trong 4 km (trạm xe đạp và xe điện dùng chung vị trí).
 - Mỗi loại phương tiện luôn có tối đa 2 trạm gần nhất được xét làm điểm lên/xuống (`perModeAccessStations`), để điểm dừng bus dày đặc không che mất ga Metro / trạm xe đạp.
+- **Chỉ đường theo đường phố thật** (`services/roadGeometry.service.ts`, máy chủ OSRM chạy trên máy bằng Docker — `osrm-setup.bat`; dự phòng `routing.openstreetmap.de`):
+  1. Trước Dijkstra: 1 request ma trận (`/table`, profile đi bộ) lấy quãng đường đi bộ thực tế từ điểm đi/đến tới các trạm ứng viên.
+  2. Sau Dijkstra: vẽ lại từng bước theo đường phố — đi bộ (`routed-foot`), xe đạp/xe điện (`routed-bike`), xe buýt (`routed-car` đi qua lần lượt các trạm); Metro nối thẳng giữa các ga (tuyến trên cao).
+  3. Tính lại tổng thời gian / quãng đường đi bộ rồi **xếp hạng lại theo tiêu chí** người dùng chọn (Nhanh nhất / Rẻ nhất / Ít đi bộ / Ít chuyển tuyến).
+  - Có cache, gộp request trùng, giới hạn 6 request đồng thời; máy chủ lỗi → bỏ qua 60 giây và thử máy chủ tiếp theo; tất cả lỗi → ước lượng đường chim bay (`stats.roadGeometry = false`).
+  - Bỏ phương án "chỉ đi bộ" dài hơn 1,5 km khi đã có phương án đi xe. Tắt hẳn bằng `ROAD_ROUTING=false`; đổi máy chủ bằng `OSRM_FOOT_URL`, `OSRM_BIKE_URL`, `OSRM_CAR_URL`.
 - Graph seed: 571 trạm → ~1.300 node, ~9.500 cạnh; mỗi lần tìm ~5–35 ms.
 
 ## Thêm 1 API mới (quy trình chuẩn)

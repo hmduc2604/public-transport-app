@@ -7,7 +7,16 @@
  * Khi Admin them/sua/xoa tram, tuyen, gia ve... admin.service goi invalidate()
  * de lan tim duong tiep theo xay lai graph moi.
  */
-import { buildTransitNetwork, planRoutes, TransitNetwork } from '../algorithms/routing';
+import {
+  accessCandidates,
+  buildTransitNetwork,
+  planRoutes,
+  rankRoutes,
+  summarize,
+  TransitNetwork,
+} from '../algorithms/routing';
+import { ROUTING_CONFIG } from '../config/routing.config';
+import { enrichSteps, walkingMatrix } from './roadGeometry.service';
 import { transitNetworkRepository } from '../repositories/transitNetwork.repository';
 import { stationRepository } from '../repositories/station.repository';
 import { attractionRepository } from '../repositories/attraction.repository';
@@ -104,13 +113,41 @@ export const routingService = {
     const passTransportTypeIds = userId ? await ticketRepository.activePassTransportTypes(userId) : [];
 
     const t0 = Date.now();
-    const { routes } = planRoutes(net, {
+
+    // B1. Quang duong di bo THUC TE (duong pho) toi cac tram ung vien -> dua vao Dijkstra
+    const station = (id: number) => net.stations.get(id)!;
+    const originCands = accessCandidates(net, origin).map((c) => station(c.stationId));
+    const destCands = accessCandidates(net, destination).map((c) => station(c.stationId));
+    const walk = await walkingMatrix(origin, destination, originCands, destCands);
+
+    // B2. Dijkstra theo tieu chi + sinh phuong an thay the
+    const coveredTypes = new Set(passTransportTypeIds);
+    const plan = planRoutes(net, {
       origin,
       destination,
       preference,
       departureMinutes: timeToMinutes(departure),
       passTransportTypeIds,
+      walkOverrides: walk ?? undefined,
     });
+
+    // B3. Ve lai moi phuong an theo duong pho that, tinh lai tong thoi gian / di bo,
+    //     roi XEP HANG LAI theo tieu chi nguoi dung chon -> lay Top N
+    // (chi ve cac phuong an co kha nang duoc hien thi: Top N + 2 du phong -> it request hon)
+    const shortlist = plan.candidates.slice(0, ROUTING_CONFIG.maxResults + 2);
+    const enriched = await Promise.all(
+      shortlist.map(async (r) => {
+        const e = await enrichSteps(r.steps);
+        return { route: summarize(e.steps, r.preference, coveredTypes), road: e.roadGeometry };
+      }),
+    );
+    // Bo phuong an "chi di bo" qua xa (vd. 3 km) khi da co phuong an di xe
+    const all = enriched.map((x) => x.route);
+    const isLongWalk = (r: (typeof all)[number]) =>
+      r.steps.every((st) => st.mode === 'WALK') && r.walkingDistance > ROUTING_CONFIG.maxDirectWalkM;
+    const usable = all.some((r) => !isLongWalk(r)) ? all.filter((r) => !isLongWalk(r)) : all;
+    const routes = rankRoutes(usable, preference, ROUTING_CONFIG.maxResults);
+    const roadGeometry = Boolean(walk) && enriched.every((x) => x.road);
     const computeTimeMs = Date.now() - t0;
 
     if (routes.length === 0) {
@@ -123,7 +160,7 @@ export const routingService = {
       preference,
       departureTime: minutesToTime(timeToMinutes(departure)),
       routes,
-      stats: { graphNodes: net.graph.nodeCount, graphEdges: net.graph.edgeCount, computeTimeMs },
+      stats: { graphNodes: net.graph.nodeCount, graphEdges: net.graph.edgeCount, computeTimeMs, roadGeometry },
     };
   },
 };

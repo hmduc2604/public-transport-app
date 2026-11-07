@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 (
 git add -A
-git commit -m "Cap nhat vi tri tram that: bus (Vinpearl + OSM), Metro 2A/3.1 (metrohanoi.vn), xe dap/xe dien TNGo" -m "- 453 diem dung cua 20 tuyen buyt, thu tu va khoang cach doc duong tu OpenStreetMap; gia ve bus 7.000d" -m "- 20 ga Metro 2A va 3.1 theo toa do chinh thuc; gia theo quang duong 8.000-15.000d (mo phong)" -m "- 49 tram xe dap TNGo theo bai dantocphattrien.vietnamnet.vn, 49 tram xe dien cung vi tri; bo tuyen co dinh xe dap/xe dien" -m "- Routing: moi loai phuong tien luon co tram gan nhat lam ung vien; ban do gop marker xe dap + xe dien" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" -m "Claude-Session: https://claude.ai/code/session_01TWMGGJ7xvGnQ4NAPuHrPau"
+git commit -m "Chi duong theo duong pho that (OSRM) + xep hang theo tieu chi" -m "- Quang duong di bo thuc te (OSRM table) dua vao Dijkstra; ve lai tung buoc theo duong pho: di bo, xe dap/xe dien, xe buyt qua cac tram" -m "- Tinh lai thoi gian / di bo roi xep hang lai theo tieu chi Nhanh nhat / Re nhat / It di bo / It chuyen tuyen; uu tien phuong an khac han nhau" -m "- osrm-setup.bat: may chu OSRM tren may (Docker, ban do Ha Noi) cho di bo :5001, xe dap :5002, o to :5003; du phong routing.openstreetmap.de" -m "- Giao dien bao ro khi phai ve duong thang; api-test dung ma test khong trung" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" -m "Claude-Session: https://claude.ai/code/session_01TWMGGJ7xvGnQ4NAPuHrPau"
 git push origin main
 echo EXIT=%errorlevel%
 git log --oneline -2

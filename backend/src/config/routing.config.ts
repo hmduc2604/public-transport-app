@@ -71,6 +71,44 @@ export const ROUTING_CONFIG = {
 
   /** So phuong an tra ve */
   maxResults: 3,
+
+  /**
+   * Chi duong theo DUONG PHO THAT (OSRM - Open Source Routing Machine, du lieu OpenStreetMap).
+   *  - Truoc khi tim: lay quang duong di bo thuc te tu diem di / den toi cac tram ung vien
+   *  - Sau khi tim: ve lai tung buoc theo duong pho (di bo, xe dap, xe dien, xe buyt)
+   * Metro di tren cao -> giu duong noi thang giua cac ga.
+   *
+   * Thu tu may chu: OSRM chay tren may (osrm-setup.bat, Docker) -> may chu cong cong
+   * routing.openstreetmap.de (du phong). Khong ket noi duoc -> uoc luong duong chim bay.
+   */
+  roadRouting: {
+    enabled: process.env.ROAD_ROUTING !== 'false',
+    servers: {
+      WALK: [
+        process.env.OSRM_FOOT_URL || 'http://localhost:5001',
+        'https://routing.openstreetmap.de/routed-foot',
+      ],
+      BICYCLE: [
+        process.env.OSRM_BIKE_URL || 'http://localhost:5002',
+        'https://routing.openstreetmap.de/routed-bike',
+      ],
+      ELECTRIC_VEHICLE: [
+        process.env.OSRM_BIKE_URL || 'http://localhost:5002',
+        'https://routing.openstreetmap.de/routed-bike',
+      ],
+      BUS: [
+        process.env.OSRM_CAR_URL || 'http://localhost:5003',
+        'https://routing.openstreetmap.de/routed-car',
+      ],
+    } as Partial<Record<TransportMode, string[]>>,
+    /** Timeout moi request (ms): may chu tren may / may chu cong cong */
+    localTimeoutMs: 3000,
+    publicTimeoutMs: 6000,
+    /** May chu loi -> bo qua trong khoang thoi gian nay (ms) roi moi thu lai */
+    downCooldownMs: 60000,
+    /** Doan xe buyt giua 2 tram dai hon (thang x he so + 400m) -> coi la loi bat duong, ve thang */
+    maxLegDetourRatio: 2.5,
+  },
 };
 
 export type RoutingConfig = typeof ROUTING_CONFIG;

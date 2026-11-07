@@ -61,6 +61,8 @@ docker logs --tail 30 %CONTAINER% >> "%LOG%" 2>&1
 goto fail
 :sqlok
 call :log "SQL Server OK"
+docker start pta-osrm-foot pta-osrm-bicycle pta-osrm-car >nul 2>&1
+if errorlevel 1 call :log "Chua co may chu chi duong tren may (chay osrm-setup.bat 1 lan) - tam dung may chu cong cong"
 
 call :log "4/7 Tao database + seed"
 docker exec %CONTAINER% %SQLCMD% -S localhost -U sa -P "%SA_PASSWORD%" %CFLAG% -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN DB_ID('PublicTransportDBV2') IS NULL THEN 0 ELSE 1 END" > "%TEMP%\pta_db.txt" 2>&1
