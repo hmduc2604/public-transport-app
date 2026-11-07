@@ -8,7 +8,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -18,7 +18,7 @@ export default function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      const u = await login(email, password);
+      const u = await login(identifier, password);
       navigate(from || (u.role === 'ADMIN' ? '/admin' : '/'), { replace: true });
     } catch (err) {
       setError(errorMessage(err));
@@ -34,12 +34,27 @@ export default function LoginPage() {
         <p className="muted">Khám phá Hà Nội bằng giao thông công cộng</p>
         {error && <div className="alert alert-error">{error}</div>}
         <label className="field">
-          <span>Email</span>
-          <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+          <span>Email hoặc số điện thoại</span>
+          <input
+            className="input"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="vd: ban@gmail.com hoặc 0912345678"
+            autoComplete="username"
+            required
+            autoFocus
+          />
         </label>
         <label className="field">
           <span>Mật khẩu</span>
-          <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <input
+            className="input"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
         </label>
         <button className="btn btn-primary btn-block" disabled={busy}>
           {busy ? 'Đang đăng nhập...' : 'Đăng nhập'}
@@ -55,7 +70,7 @@ export default function LoginPage() {
               key={em}
               className="chip chip-btn"
               onClick={() => {
-                setEmail(em);
+                setIdentifier(em);
                 setPassword('123456');
               }}
             >

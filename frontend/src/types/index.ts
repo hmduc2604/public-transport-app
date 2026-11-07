@@ -27,6 +27,8 @@ export interface User {
   fullName: string;
   email: string;
   phone: string | null;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
   role: 'USER' | 'ADMIN';
   status: 'ACTIVE' | 'LOCKED';
   createdAt: string;
@@ -35,6 +37,33 @@ export interface User {
 export interface AuthResponse {
   token: string;
   user: User;
+}
+
+export type VerifyChannel = 'EMAIL' | 'SMS';
+
+/** Ket qua buoc 1 dang ky: ma da gui, cho nguoi dung nhap */
+export interface VerificationInfo {
+  verificationId: string;
+  channel: VerifyChannel;
+  /** email / SĐT da che bot (vd: ng****@gmail.com, 091****678) */
+  destination: string;
+  expiresInSeconds: number;
+  resendInSeconds: number;
+}
+
+export interface VerificationChannels {
+  email: boolean;
+  sms: boolean;
+  ttlMinutes: number;
+  resendSeconds: number;
+}
+
+export interface RegisterInput {
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+  channel: VerifyChannel;
 }
 
 /* ---------- Transport ---------- */

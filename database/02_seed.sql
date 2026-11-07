@@ -25,6 +25,11 @@
      - TicketTypes duoc insert TRUOC OrderDetails/Tickets.
      - Trips sinh tu dong theo tan suat (headway) + StopTimes theo toc do.
    ===================================================================== */
+-- Bat buoc cho unique index co dieu kien (UX_Users_Phone); sqlcmd mac dinh tat QUOTED_IDENTIFIER
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
+
 
 USE PublicTransportDBV2;
 GO
@@ -40,6 +45,8 @@ INSERT INTO Users (FullName, Email, PasswordHash, Phone, Role, Status) VALUES
 (N'Trần Thị Bình',  'binh@example.com',  'SEED:123456', '0901000002', 'USER',  'ACTIVE'),
 (N'Lê Minh Cường',  'cuong@example.com', 'SEED:123456', '0901000003', 'USER',  'ACTIVE'),
 (N'Admin System',   'admin@example.com', 'SEED:123456', '0901000000', 'ADMIN', 'ACTIVE');
+-- Tai khoan demo coi nhu da xac nhan email + SĐT
+UPDATE Users SET EmailVerifiedAt = SYSDATETIME(), PhoneVerifiedAt = SYSDATETIME();
 GO
 
 /* ---------------------------------------------------------------------

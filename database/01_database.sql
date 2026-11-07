@@ -1,11 +1,16 @@
 /* =====================================================================
    PUBLIC TRANSPORT MULTI-MODAL - DATABASE SCHEMA (SQL Server)
    File   : 01_database.sql
-   Muc dich: Tao database PublicTransportDBV2 + 18 bang + PK/FK/CHECK/INDEX
+   Muc dich: Tao database PublicTransportDBV2 + 19 bang + PK/FK/CHECK/INDEX
    Chay   : Mo SSMS -> New Query -> F5 (chay ca file)
    Luu y  : Script se XOA database cu (neu co) de tao lai tu dau.
             Neu khong muon mat du lieu, dung 04_upgrade_existing_db.sql
    ===================================================================== */
+-- Bat buoc cho unique index co dieu kien (UX_Users_Phone); sqlcmd mac dinh tat QUOTED_IDENTIFIER
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
+
 
 USE master;
 GO
@@ -36,10 +41,40 @@ CREATE TABLE Users (
     CreatedAt     DATETIME2     NOT NULL DEFAULT SYSDATETIME(),
     UpdatedAt     DATETIME2     NULL,
     Status        VARCHAR(20)   NOT NULL DEFAULT 'ACTIVE',
+    EmailVerifiedAt DATETIME2   NULL,     -- thoi diem xac nhan email (qua ma gui ve email)
+    PhoneVerifiedAt DATETIME2   NULL,     -- thoi diem xac nhan SĐT (qua ma SMS)
     CONSTRAINT CK_Users_Role   CHECK (Role IN ('USER', 'ADMIN')),
     CONSTRAINT CK_Users_Status CHECK (Status IN ('ACTIVE', 'LOCKED'))
 );
 GO
+-- So dien thoai dung de dang nhap -> khong trung (cho phep NULL)
+CREATE UNIQUE INDEX UX_Users_Phone ON Users(Phone) WHERE Phone IS NOT NULL;
+GO
+
+/* ---------------------------------------------------------------------
+   1b. VerificationCodes  (ma xac nhan dang ky gui qua Email / SMS)
+       - Luu thong tin dang ky tam trong Payload (JSON, mat khau da bam)
+       - Chi luu HASH cua ma, khong luu ma goc
+       - Nhap dung ma -> moi tao ban ghi trong Users
+   --------------------------------------------------------------------- */
+CREATE TABLE VerificationCodes (
+    VerificationId VARCHAR(36)   NOT NULL PRIMARY KEY,
+    Purpose        VARCHAR(30)   NOT NULL,          -- REGISTER
+    Channel        VARCHAR(10)   NOT NULL,          -- EMAIL | SMS
+    Destination    VARCHAR(150)  NOT NULL,          -- email hoac SĐT nhan ma
+    CodeHash       VARCHAR(64)   NOT NULL,
+    Payload        NVARCHAR(MAX) NULL,
+    Attempts       INT           NOT NULL DEFAULT 0,
+    SendCount      INT           NOT NULL DEFAULT 1,
+    ExpiresAt      DATETIME2     NOT NULL,
+    LastSentAt     DATETIME2     NOT NULL DEFAULT SYSDATETIME(),
+    VerifiedAt     DATETIME2     NULL,
+    CreatedAt      DATETIME2     NOT NULL DEFAULT SYSDATETIME(),
+    CONSTRAINT CK_VerificationCodes_Channel CHECK (Channel IN ('EMAIL', 'SMS'))
+);
+CREATE INDEX IX_VerificationCodes_Destination ON VerificationCodes(Destination, LastSentAt);
+GO
+
 
 /* ---------------------------------------------------------------------
    2. TransportTypes  (Bus, Metro, Bicycle, Electric Vehicle)
@@ -360,7 +395,7 @@ CREATE INDEX IX_Tickets_Order                ON Tickets(OrderId);
 CREATE INDEX IX_TripHistories_User           ON TripHistories(UserId, StartedAt DESC);
 GO
 
-/* Kiem tra: phai co 18 bang */
+/* Kiem tra: phai co 19 bang */
 SELECT TABLE_NAME
 FROM INFORMATION_SCHEMA.TABLES
 WHERE TABLE_TYPE = 'BASE TABLE'

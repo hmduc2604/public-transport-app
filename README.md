@@ -130,3 +130,46 @@ Metro đi trên cao nên vẫn nối thẳng giữa các ga. Cấu hình trong `
 - Bảng mới `AttractionImages`; cột mới `HoursSummary`, `PriceFrom`, `VisitDuration`, `BestTime`, `Tips` trong `TouristAttractions`. Admin sửa được tất cả, kể cả bộ sưu tập ảnh (mỗi dòng: `URL | chú thích | tác giả / giấy phép | link nguồn`).
 - Database đã có dữ liệu: chạy `upgrade-db.bat` (chạy `05_attraction_images.sql` + `06_attraction_details.sql`, không xóa dữ liệu khác).
 - Tải lại ảnh nếu thiếu: `download-images.bat` (chỉ tải file chưa có; Wikimedia giới hạn tốc độ nên mất khoảng 20–30 phút cho lần đầu).
+
+## Đăng ký có xác nhận qua Email / SMS
+
+- **Đăng ký 2 bước**: nhập họ tên, email, số điện thoại, mật khẩu → chọn nhận **mã 6 số** qua **Email** hoặc **SMS** → nhập mã → tài khoản mới được tạo trong bảng `Users` (kèm `EmailVerifiedAt` / `PhoneVerifiedAt`). Trước khi nhập đúng mã, thông tin chỉ nằm tạm trong bảng `VerificationCodes` (mật khẩu đã băm, mã chỉ lưu dạng hash).
+- Mã hết hạn sau 5 phút, sai tối đa 5 lần, gửi lại sau 60 giây, tối đa 5 mã/giờ cho mỗi email/SĐT.
+- **Đăng nhập** bằng email **hoặc** số điện thoại (0912345678, +84 912 345 678…). Số điện thoại không được trùng giữa các tài khoản.
+- Chưa cấu hình gửi → API trả lỗi 503 `NOTIFY_NOT_CONFIGURED`, trang đăng ký báo rõ (không giả vờ gửi).
+- Database đang chạy: chạy `upgrade-db.bat` (có `07_auth_verification.sql`). Cài thư viện gửi mail: `install-deps.bat` (nodemailer).
+
+### Cấu hình gửi thật — tạo file `backend/.env.local`
+
+File này chứa thông tin bí mật: **không** bị `run-all.bat` ghi đè và **không** được đẩy lên GitHub. Tạo file rồi điền giá trị của bạn, lưu lại là backend tự khởi động lại.
+
+```ini
+# ---- EMAIL qua Gmail ----
+# Bật Xác minh 2 bước -> tạo Mật khẩu ứng dụng (App Password 16 ký tự) tại
+# https://myaccount.google.com/apppasswords  (KHÔNG dùng mật khẩu Gmail thường)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=ban@gmail.com
+SMTP_PASS=xxxxxxxxxxxxxxxx
+MAIL_FROM=ban@gmail.com
+
+# ---- SMS: chọn 1 trong twilio | esms | speedsms ----
+SMS_PROVIDER=twilio
+# Twilio (https://console.twilio.com) - tài khoản dùng thử chỉ gửi tới số đã xác minh trong Twilio
+TWILIO_ACCOUNT_SID=ACxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxx
+TWILIO_FROM=+1xxxxxxxxxx
+# eSMS.vn - cần Brandname + mẫu tin CSKH đã được duyệt
+# SMS_PROVIDER=esms
+# ESMS_API_KEY=...
+# ESMS_SECRET_KEY=...
+# ESMS_BRANDNAME=...
+# SpeedSMS.vn - access token ở Settings > Profile; SPEEDSMS_TYPE=2 (CSKH) hoặc 3 (brandname riêng + SPEEDSMS_SENDER)
+# SMS_PROVIDER=speedsms
+# SPEEDSMS_TOKEN=...
+# SPEEDSMS_TYPE=2
+```
+
+Kiểm tra: mở `http://localhost:5000/api/v1/auth/verification-channels` → `"email": true` / `"sms": true` là đã sẵn sàng.
+

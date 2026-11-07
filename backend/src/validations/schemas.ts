@@ -5,21 +5,35 @@ const STATUS_ACTIVE = ['ACTIVE', 'INACTIVE'] as const;
 
 export const schemas = {
   /* ---------- Auth ---------- */
+  /** Dang ky buoc 1: gui ma xac nhan qua EMAIL hoac SMS */
   register: {
     fullName: { type: 'string', required: true, min: 2, max: 100, label: 'Họ tên' },
     email: { type: 'email', required: true, label: 'Email' },
+    phone: { type: 'string', required: true, max: 20, pattern: /^[0-9+\-\s.()]{9,20}$/, label: 'Số điện thoại' },
     password: { type: 'string', required: true, min: 6, max: 100, label: 'Mật khẩu' },
-    phone: { type: 'string', max: 20, pattern: /^[0-9+\-\s]{8,20}$/, label: 'Số điện thoại' },
+    channel: { type: 'enum', required: true, values: ['EMAIL', 'SMS'], label: 'Cách nhận mã' },
   } as Schema,
 
+  /** Dang ky buoc 2: nhap ma */
+  verifyCode: {
+    verificationId: { type: 'string', required: true, max: 36, label: 'Phiên xác nhận' },
+    code: { type: 'string', required: true, min: 4, max: 10, pattern: /^\d+$/, label: 'Mã xác nhận' },
+  } as Schema,
+
+  resendCode: {
+    verificationId: { type: 'string', required: true, max: 36, label: 'Phiên xác nhận' },
+  } as Schema,
+
+  /** Dang nhap bang email hoac so dien thoai (giu field 'email' cho client cu) */
   login: {
-    email: { type: 'email', required: true, label: 'Email' },
+    identifier: { type: 'string', max: 150, label: 'Email hoặc số điện thoại' },
+    email: { type: 'string', max: 150, label: 'Email' },
     password: { type: 'string', required: true, label: 'Mật khẩu' },
   } as Schema,
 
   updateProfile: {
     fullName: { type: 'string', min: 2, max: 100, label: 'Họ tên' },
-    phone: { type: 'string', max: 20, pattern: /^[0-9+\-\s]{8,20}$/, label: 'Số điện thoại' },
+    phone: { type: 'string', max: 20, pattern: /^[0-9+\-\s.()]{9,20}$/, label: 'Số điện thoại' },
   } as Schema,
 
   changePassword: {

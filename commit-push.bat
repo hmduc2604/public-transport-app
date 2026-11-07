@@ -1,8 +1,9 @@
 @echo off
 cd /d "%~dp0"
 (
+git reset --soft origin/main
 git add -A
-git commit -m "Dia diem: thong tin chi tiet, anh dau trang phu kin, bo suu tap anh" -m "- 20 dia diem: gioi thieu, lich su, diem noi bat, gio mo cua, gia ve (tra cuu 11/2026), thoi gian tham quan, thoi diem dep, luu y" -m "- The Kham pha hien dia chi, gio mo cua, thoi gian tham quan, gia ve, so anh" -m "- Trang chi tiet: anh phu kin dau trang, bo chu thich duoi anh, thong tin nhanh, bo suu tap 97 anh Wikimedia Commons + lightbox; nguon anh thu gon cuoi trang" -m "- Bang AttractionImages, cot moi HoursSummary/PriceFrom/VisitDuration/BestTime/Tips; 06_attraction_details.sql; admin sua duoc bo suu tap" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" -m "Claude-Session: https://claude.ai/code/session_01TWMGGJ7xvGnQ4NAPuHrPau"
+git commit -m "Dang ky co ma xac nhan that qua Email hoac SMS, dang nhap bang email/SDT" -m "- Dang ky 2 buoc: chon nhan ma 6 so qua Email (SMTP/nodemailer) hoac SMS (Twilio / eSMS / SpeedSMS); nhap dung ma moi tao tai khoan trong Users" -m "- Bang VerificationCodes (chi luu hash ma), cot EmailVerifiedAt/PhoneVerifiedAt, unique index SDT; 07_auth_verification.sql" -m "- Het han 5 phut, sai toi da 5 lan, gui lai sau 60s, toi da 5 ma/gio; chua cau hinh -> bao loi 503 ro rang" -m "- Dang nhap bang email hoac so dien thoai; cau hinh bi mat trong backend/.env.local (khong day len GitHub)" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" -m "Claude-Session: https://claude.ai/code/session_01TWMGGJ7xvGnQ4NAPuHrPau"
 git push origin main
 echo EXIT=%errorlevel%
 git log --oneline -2
