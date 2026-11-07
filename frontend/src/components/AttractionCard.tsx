@@ -46,6 +46,15 @@ export function AttractionCard({ a }: { a: Attraction }) {
         </div>
         <h3>{a.name}</h3>
         <p className="muted clamp-2">{a.description}</p>
+        <ul className="card-facts">
+          {a.address && <li title="Địa chỉ">📍 <span className="clamp-1">{a.address}</span></li>}
+          {a.hoursSummary && <li title="Giờ mở cửa">🕐 <span className="clamp-1">{a.hoursSummary}</span></li>}
+          {a.visitDuration && <li title="Thời gian tham quan gợi ý">⏱ <span className="clamp-1">{a.visitDuration}</span></li>}
+        </ul>
+        <div className="card-foot">
+          {a.priceFrom && <span className={`price-tag${a.priceFrom === 'Miễn phí' ? ' free' : ''}`}>🎟 {a.priceFrom}</span>}
+          {a.imageCount ? <span className="muted small">📷 {a.imageCount + (a.imageUrl ? 1 : 0)} ảnh</span> : null}
+        </div>
       </div>
     </Link>
   );

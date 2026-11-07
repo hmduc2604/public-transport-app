@@ -122,9 +122,11 @@ Lộ trình trên bản đồ được vẽ theo đường phố thật (đi b�
 Metro đi trên cao nên vẫn nối thẳng giữa các ga. Cấu hình trong `backend/src/config/routing.config.ts` (`roadRouting`), tắt bằng `ROAD_ROUTING=false` trong `backend/.env`.
 
 
-## Ảnh địa điểm tham quan
+## Địa điểm tham quan: thông tin và ảnh
 
-20 địa điểm đều có ảnh thật lấy từ [Wikimedia Commons](https://commons.wikimedia.org) (giấy phép tự do CC0 / Public domain / CC BY / CC BY-SA), lưu sẵn trong `frontend/public/images/attractions/` (rộng 1280px). Tác giả + giấy phép từng ảnh nằm ở cột `ImageCredit`, `ImageSourceUrl` của bảng `TouristAttractions`, hiển thị dưới ảnh ở trang chi tiết, và liệt kê trong `frontend/public/images/attractions/CREDITS.md`.
-
-- Database đã có sẵn dữ liệu: chạy `upgrade-db.bat` (chạy `database/05_attraction_images.sql`, không xóa dữ liệu).
-- Tải lại ảnh nếu thiếu: `download-images.bat` (chỉ tải file chưa có).
+- **Thông tin chi tiết** cho 20 địa điểm: giới thiệu, lịch sử, điểm nổi bật, giờ mở cửa, giá vé (tra cứu 11/2026 – có thể thay đổi), thời gian tham quan gợi ý, thời điểm đẹp nhất, lưu ý khi tham quan. Thẻ ở mục **Khám phá** hiện nhanh địa chỉ, giờ mở cửa, thời gian tham quan, giá vé và số ảnh.
+- **Ảnh**: 1 ảnh đại diện (phủ kín đầu trang chi tiết) + 3–5 ảnh bộ sưu tập mỗi địa điểm, xem phóng to bằng lightbox. Ảnh lấy từ [Wikimedia Commons](https://commons.wikimedia.org) (giấy phép tự do CC0 / Public domain / CC BY / CC BY-SA), lưu sẵn trong `frontend/public/images/attractions/` và `.../gallery/`.
+- **Ghi nguồn ảnh** (bắt buộc với CC BY / CC BY-SA): mục "Nguồn ảnh" thu gọn cuối trang chi tiết, cột `ImageCredit` / bảng `AttractionImages`, và file `frontend/public/images/attractions/CREDITS.md`.
+- Bảng mới `AttractionImages`; cột mới `HoursSummary`, `PriceFrom`, `VisitDuration`, `BestTime`, `Tips` trong `TouristAttractions`. Admin sửa được tất cả, kể cả bộ sưu tập ảnh (mỗi dòng: `URL | chú thích | tác giả / giấy phép | link nguồn`).
+- Database đã có dữ liệu: chạy `upgrade-db.bat` (chạy `05_attraction_images.sql` + `06_attraction_details.sql`, không xóa dữ liệu khác).
+- Tải lại ảnh nếu thiếu: `download-images.bat` (chỉ tải file chưa có; Wikimedia giới hạn tốc độ nên mất khoảng 20–30 phút cho lần đầu).

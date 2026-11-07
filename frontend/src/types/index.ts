@@ -124,13 +124,30 @@ export interface Attraction {
   /** Tac gia / giay phep anh (bat buoc ghi nguon voi anh CC BY, CC BY-SA) */
   imageCredit?: string | null;
   imageSourceUrl?: string | null;
+  /** Gio mo cua rut gon, gia ve tu..., thoi gian tham quan goi y (hien tren the) */
+  hoursSummary?: string | null;
+  priceFrom?: string | null;
+  visitDuration?: string | null;
+  bestTime?: string | null;
+  tips?: string[];
+  /** So anh trong bo suu tap */
+  imageCount?: number;
   popularityScore: number;
   status: string;
   distanceMeters?: number;
   score?: number;
 }
 
+export interface AttractionImage {
+  imageId: number;
+  imageUrl: string;
+  caption: string | null;
+  credit: string | null;
+  sourceUrl: string | null;
+}
+
 export interface AttractionDetail extends Attraction {
+  images: AttractionImage[];
   nearbyStations: (Station & { walkingDistance: number; walkingDuration: number })[];
 }
 

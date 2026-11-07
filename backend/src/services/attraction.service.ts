@@ -12,20 +12,22 @@ import { AppError } from '../utils/AppError';
 import { haversineMeters } from '../utils/geo';
 import { toTransportMode } from '../types/transport.types';
 
+const splitPipe = (v: unknown) => (v ? String(v).split('|').map((s) => s.trim()).filter(Boolean) : []);
+
+/** Highlights / Tips luu dang chuoi 'a|b|c' -> mang */
 function splitHighlights(a: any) {
-  return {
-    ...a,
-    highlights: a.highlights ? String(a.highlights).split('|').map((s: string) => s.trim()).filter(Boolean) : [],
-  };
+  return { ...a, highlights: splitPipe(a.highlights), tips: splitPipe(a.tips) };
 }
 
 export const attractionService = {
   async list(opts: { category?: string; search?: string; sort?: string }) {
-    return (await attractionRepository.list(opts)).map(splitHighlights);
+    const [rows, counts] = await Promise.all([attractionRepository.list(opts), attractionRepository.imageCounts()]);
+    return rows.map((a: any) => ({ ...splitHighlights(a), imageCount: counts.get(a.attractionId) ?? 0 }));
   },
 
   async featured(limit = 8) {
-    return (await attractionRepository.featured(limit)).map(splitHighlights);
+    const [rows, counts] = await Promise.all([attractionRepository.featured(limit), attractionRepository.imageCounts()]);
+    return rows.map((a: any) => ({ ...splitHighlights(a), imageCount: counts.get(a.attractionId) ?? 0 }));
   },
 
   categories: () => attractionRepository.categories(),
@@ -33,9 +35,10 @@ export const attractionService = {
   async detail(id: number) {
     const a = await attractionRepository.getById(id);
     if (!a || a.status !== 'ACTIVE') throw AppError.notFound('Không tìm thấy địa điểm', 'ATTRACTION_NOT_FOUND');
-    const stations = await attractionRepository.nearbyStations(id);
+    const [stations, images] = await Promise.all([attractionRepository.nearbyStations(id), attractionRepository.images(id)]);
     return {
       ...splitHighlights(a),
+      images,
       nearbyStations: stations.map((s: any) => ({ ...s, mode: toTransportMode(s.transportTypeName) })),
     };
   },

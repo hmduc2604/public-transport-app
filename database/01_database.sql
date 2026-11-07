@@ -1,7 +1,7 @@
 /* =====================================================================
    PUBLIC TRANSPORT MULTI-MODAL - DATABASE SCHEMA (SQL Server)
    File   : 01_database.sql
-   Muc dich: Tao database PublicTransportDBV2 + 17 bang + PK/FK/CHECK/INDEX
+   Muc dich: Tao database PublicTransportDBV2 + 18 bang + PK/FK/CHECK/INDEX
    Chay   : Mo SSMS -> New Query -> F5 (chay ca file)
    Luu y  : Script se XOA database cu (neu co) de tao lai tu dau.
             Neu khong muon mat du lieu, dung 04_upgrade_existing_db.sql
@@ -171,11 +171,16 @@ CREATE TABLE TouristAttractions (
     Latitude        DECIMAL(9,6)   NOT NULL,
     Longitude       DECIMAL(9,6)   NOT NULL,
     Category        NVARCHAR(100),
-    OpeningHours    NVARCHAR(255),
+    OpeningHours    NVARCHAR(500),
     TicketPrice     NVARCHAR(500)  NULL,
     ImageUrl        VARCHAR(500),
     ImageCredit     NVARCHAR(300)  NULL,      -- tac gia / giay phep anh
     ImageSourceUrl  VARCHAR(500)   NULL,      -- trang nguon cua anh (Wikimedia Commons)
+    HoursSummary    NVARCHAR(100)  NULL,      -- gio mo cua rut gon (hien tren the dia diem)
+    PriceFrom       NVARCHAR(50)   NULL,      -- gia ve tu ... (hien tren the dia diem)
+    VisitDuration   NVARCHAR(100)  NULL,      -- thoi gian tham quan goi y
+    BestTime        NVARCHAR(300)  NULL,      -- thoi diem dep nhat
+    Tips            NVARCHAR(MAX)  NULL,      -- luu y, cac y cach nhau boi dau '|'
     PopularityScore INT            NOT NULL CONSTRAINT DF_TouristAttractions_Popularity DEFAULT 50,
     Status          VARCHAR(20)    NOT NULL DEFAULT 'ACTIVE',
     CreatedAt       DATETIME2      NOT NULL DEFAULT SYSDATETIME(),
@@ -200,6 +205,23 @@ CREATE TABLE AttractionStations (
         REFERENCES Stations(StationId),
     CONSTRAINT UQ_AttractionStations UNIQUE (AttractionId, StationId)
 );
+GO
+
+/* ---------------------------------------------------------------------
+   10b. AttractionImages  (bo suu tap anh cua diem tham quan)
+   --------------------------------------------------------------------- */
+CREATE TABLE AttractionImages (
+    ImageId       INT IDENTITY(1,1) PRIMARY KEY,
+    AttractionId  INT            NOT NULL,
+    ImageUrl      VARCHAR(500)   NOT NULL,
+    Caption       NVARCHAR(200)  NULL,
+    Credit        NVARCHAR(300)  NULL,   -- tac gia / giay phep
+    SourceUrl     VARCHAR(500)   NULL,   -- trang nguon (Wikimedia Commons)
+    SortOrder     INT            NOT NULL DEFAULT 0,
+    CONSTRAINT FK_AttractionImages_Attractions FOREIGN KEY (AttractionId)
+        REFERENCES TouristAttractions(AttractionId)
+);
+CREATE INDEX IX_AttractionImages_Attraction ON AttractionImages(AttractionId, SortOrder);
 GO
 
 /* ---------------------------------------------------------------------
@@ -338,7 +360,7 @@ CREATE INDEX IX_Tickets_Order                ON Tickets(OrderId);
 CREATE INDEX IX_TripHistories_User           ON TripHistories(UserId, StartedAt DESC);
 GO
 
-/* Kiem tra: phai co 17 bang */
+/* Kiem tra: phai co 18 bang */
 SELECT TABLE_NAME
 FROM INFORMATION_SCHEMA.TABLES
 WHERE TABLE_TYPE = 'BASE TABLE'
