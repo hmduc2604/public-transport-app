@@ -16,11 +16,12 @@ Lỗi validate có thêm `details`: `{ "email": "Email không hợp lệ" }`.
 | HTTP | Khi nào |
 |---|---|
 | 200 / 201 | Thành công / Tạo mới |
-| 400 | `VALIDATION_ERROR`, `INVALID_ID`, `INVALID_LOCATION`... |
-| 401 | `UNAUTHORIZED`, `INVALID_TOKEN`, `TOKEN_EXPIRED`, `INVALID_CREDENTIALS` |
+| 400 | `VALIDATION_ERROR`, `INVALID_ID`, `INVALID_LOCATION`, `OUT_OF_SERVICE_AREA` (toạ độ ngoài Hà Nội), `INVALID_TIME` (giờ không phải HH:mm), `INVALID_TRIP_TIME`, `CARD_INVALID`... |
+| 401 | `UNAUTHORIZED`, `INVALID_TOKEN`, `TOKEN_EXPIRED`, `INVALID_CREDENTIALS`, `ACCOUNT_INACTIVE` (tài khoản vừa bị khóa – token cũ mất hiệu lực ngay) |
 | 403 | `FORBIDDEN`, `ACCOUNT_LOCKED`, `TICKET_FORBIDDEN`, `ORDER_FORBIDDEN` |
 | 404 | `*_NOT_FOUND`, `NO_ROUTE_FOUND`, `API_NOT_FOUND` |
-| 409 | `EMAIL_EXISTS`, `DUPLICATE_VALUE`, `CONSTRAINT_VIOLATION`, `ORDER_ALREADY_PAID` |
+| 409 | `EMAIL_EXISTS`, `DUPLICATE_VALUE`, `CONSTRAINT_VIOLATION`, `ORDER_ALREADY_PAID`, `VEHICLE_SCHEDULE_CONFLICT` (xe đã có chuyến trùng giờ) |
+| 429 | `TOO_MANY_LOGIN_ATTEMPTS` (sai mật khẩu 10 lần / 15 phút / IP), `TOO_MANY_CODE_REQUESTS` (gửi mã quá 10 lần / giờ / IP); header `Retry-After` |
 | 500 / 503 | `INTERNAL_ERROR` / `DB_UNAVAILABLE` |
 
 ---

@@ -102,7 +102,25 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
   r = await call('DELETE', `/admin/trips/${r.j?.data?.tripId}`, null, at); check('admin delete trip', r.status === 200);
   r = await call('DELETE', `/admin/routes/${rid}`, null, at); check('admin soft delete route', r.status === 200);
   r = await call('DELETE', `/admin/stations/${sid}`, null, at); check('admin soft delete station', r.status === 200);
-  r = await call('DELETE', '/admin/vehicles/1', null, at); check('xoa xe dang co chuyen -> 409', r.status === 409, r.j?.errorCode);
+  r = await call('GET', '/admin/trips?routeId=1', null, at); const busyTrip = r.j?.data?.[0];
+  r = await call('DELETE', `/admin/vehicles/${busyTrip?.vehicleId}`, null, at); check('xoa xe dang co chuyen -> 409', r.status === 409, r.j?.errorCode);
+  r = await call('POST', '/admin/trips', { routeId: 1, vehicleId: busyTrip?.vehicleId, tripCode: 'BUSTEST' + SUF + '-X', departureTime: busyTrip?.departureTime, arrivalTime: busyTrip?.arrivalTime }, at);
+  check('xe da co chuyen trung gio -> 409', r.status === 409 && r.j.errorCode === 'VEHICLE_SCHEDULE_CONFLICT', r.j?.message);
+  r = await call('POST', '/admin/trips', { routeId: 1, vehicleId: busyTrip?.vehicleId, tripCode: 'BUSTEST' + SUF + '-Y', departureTime: '10:00', arrivalTime: '09:00' }, at);
+  check('gio den truoc gio di -> 400', r.status === 400 && r.j.errorCode === 'INVALID_TRIP_TIME', r.j?.errorCode);
+  r = await call('GET', '/admin/trips', null, at); check('lich trinh tra du chuyen (> 500)', r.j?.data?.length > 1000, r.j?.data?.length);
+  // ---- Cac truong hop bien / bao mat ----
+  r = await call('GET', '/attractions?sort=constructor'); check('sort la -> mac dinh, khong loi 500', r.status === 200, r.status);
+  r = await call('GET', '/stations/99999999999'); check('id qua lon -> 400', r.status === 400, r.j?.errorCode);
+  r = await call('PUT', '/users/me', { fullName: '' }, tok); check('ho ten rong -> 400 (khong loi 500)', r.status === 400, r.j?.errorCode);
+  r = await call('POST', '/routing/search', { origin: { latitude: 10.77, longitude: 106.70 }, destination: { attractionId: 1 } }); check('diem ngoai Ha Noi -> 400', r.status === 400 && r.j.errorCode === 'OUT_OF_SERVICE_AREA', r.j?.message);
+  r = await call('POST', '/routing/search', { origin: { attractionId: 2 }, destination: { attractionId: 1 }, departureTime: '25:99' }); check('gio khoi hanh sai -> 400', r.status === 400 && r.j.errorCode === 'INVALID_TIME', r.j?.errorCode);
+  r = await call('POST', '/admin/tickets/verify', { qrData: 'PTA|TK-X|ÀÀÀÀ' }, at); check('QR chu ky ky tu la -> khong hop le (khong loi 500)', r.status === 200 && r.j.data.valid === false, r.status);
+  r = await call('POST', '/auth/login', { email: 'cuong@example.com', password: '123456' }); const ct = r.j?.data?.token;
+  r = await call('PUT', '/admin/users/3', { status: 'LOCKED' }, at);
+  r = await call('GET', '/users/me', null, ct); check('khoa tai khoan -> token cu bi chan ngay', r.status === 401 && r.j.errorCode === 'ACCOUNT_INACTIVE', r.j?.errorCode);
+  r = await call('PUT', '/admin/users/3', { status: 'ACTIVE' }, at);
+  r = await call('GET', '/users/me', null, ct); check('mo khoa -> dung lai binh thuong', r.status === 200, r.status);
   r = await call('PUT', '/admin/users/4', { status: 'LOCKED' }, at); check('admin tu khoa minh -> 400', r.status === 400, r.j?.errorCode);
   r = await call('POST', '/admin/routing/rebuild', null, at); check('rebuild graph', r.status === 200, JSON.stringify(r.j?.data));
   console.log(`\n${pass} PASS, ${fail} FAIL`);

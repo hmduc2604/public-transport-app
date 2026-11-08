@@ -5,6 +5,7 @@ dist/
 # Secrets - khong day len GitHub
 .env
 .env.local
+.jwt-secret
 
 # Log / file tam
 *.log

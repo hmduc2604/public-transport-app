@@ -2,7 +2,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { RegisterInput, User, VerificationInfo } from '../types';
 import { authApi } from '../services/authApi';
-import { setUnauthorizedHandler, tokenStore } from '../services/api';
+import { ApiError, setUnauthorizedHandler, tokenStore } from '../services/api';
 
 interface AuthState {
   user: User | null;
@@ -37,8 +37,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       setUser(await authApi.me());
-    } catch {
-      tokenStore.clear();
+    } catch (e) {
+      // Chi dang xuat khi token thuc su sai / het han / tai khoan bi khoa (401).
+      // Mat mang hoac backend dang khoi dong lai -> giu token, lan sau thu lai.
+      if (e instanceof ApiError && e.status === 401) tokenStore.clear();
       setUser(null);
     }
   }, []);

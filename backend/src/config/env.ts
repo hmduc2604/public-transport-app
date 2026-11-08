@@ -101,3 +101,9 @@ export const env = {
     },
   },
 };
+
+/* Chay that (NODE_ENV=production) ma van dung khoa mac dinh cong khai -> ai cung gia mao duoc token admin */
+const PUBLIC_SECRETS = ['dev_jwt_secret_change_me', 'hanoigo_dev_jwt_secret_change_me_2026', 'change_this_to_a_long_random_string'];
+if (env.nodeEnv === 'production' && (PUBLIC_SECRETS.includes(env.jwt.secret) || env.jwt.secret.length < 32)) {
+  throw new Error('JWT_SECRET đang là giá trị mặc định / quá ngắn. Đặt JWT_SECRET ngẫu nhiên (>= 32 ký tự) trước khi chạy production.');
+}

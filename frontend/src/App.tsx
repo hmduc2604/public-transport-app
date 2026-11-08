@@ -11,6 +11,7 @@ import { MainLayout } from './layouts/MainLayout';
 import { AdminLayout } from './layouts/AdminLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginRequired } from './components/LoginRequired';
+import { GuestOnly } from './components/GuestOnly';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
@@ -71,8 +72,8 @@ export default function App() {
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/home" element={<Navigate to="/" replace />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />
+        <Route path="/register" element={<GuestOnly><RegisterPage /></GuestOnly>} />
         <Route path="/map" element={mapGate(<MapPage />)} />
         <Route path="/search" element={<Navigate to="/map" replace />} />
         <Route path="/attractions/:id" element={attractionGate(<AttractionDetailPage />)} />

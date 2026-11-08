@@ -26,6 +26,8 @@ import { statisticsRepository } from '../repositories/statistics.repository';
 import { routingService } from './routing.service';
 import { ticketService } from './ticket.service';
 import { paymentService } from './payment.service';
+import { invalidateUserCache } from '../middleware/auth.middleware';
+import { normalizeVnPhone } from '../utils/phone';
 import { AppError } from '../utils/AppError';
 import { paginated } from '../utils/apiResponse';
 import { AuthUser } from '../types/express';
@@ -58,6 +60,48 @@ function textToImages(text: string) {
     }));
 }
 
+/* ---------- Kiem tra chuyen: cung loai phuong tien, thoi gian hop ly, xe khong chay 2 chuyen cung luc ---------- */
+const MAX_TRIP_MINUTES = 6 * 60;
+const toMin = (t: string) => {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+};
+/** Khoang [bat dau, ket thuc] theo phut; qua nua dem -> ket thuc + 1440 */
+const tripSpan = (dep: string, arr: string) => {
+  const s = toMin(dep);
+  let e = toMin(arr);
+  if (e <= s) e += 1440;
+  return [s, e] as const;
+};
+
+async function checkTrip(t: TripInput, selfId?: number) {
+  const route = ensure(await routeRepository.getById(t.routeId), 'Tuyến không tồn tại', 'ROUTE_NOT_FOUND');
+  const vehicle = ensure(await transportRepository.getVehicle(t.vehicleId), 'Phương tiện không tồn tại', 'VEHICLE_NOT_FOUND');
+  if (route.transportTypeId !== vehicle.transportTypeId) {
+    throw AppError.badRequest('Phương tiện không cùng loại với tuyến', 'VEHICLE_TYPE_MISMATCH');
+  }
+  const [s, e] = tripSpan(t.departureTime, t.arrivalTime);
+  if (e - s > MAX_TRIP_MINUTES) {
+    throw AppError.badRequest('Giờ đến phải sau giờ xuất phát (một chuyến tối đa 6 giờ)', 'INVALID_TRIP_TIME', {
+      arrivalTime: 'Giờ đến phải sau giờ xuất phát',
+    });
+  }
+  if (t.status === 'CANCELLED') return;
+  const others = await tripRepository.list({ vehicleId: t.vehicleId, limit: 5000 });
+  for (const o of others) {
+    if (o.tripId === selfId || o.status === 'CANCELLED') continue;
+    const [os, oe] = tripSpan(o.departureTime, o.arrivalTime);
+    // so sanh ca truong hop lech 1 ngay (chuyen qua nua dem)
+    const overlap = [-1440, 0, 1440].some((d) => s < oe + d && os + d < e);
+    if (overlap) {
+      throw AppError.conflict(
+        `Phương tiện ${vehicle.vehicleCode ?? ''} đang chạy chuyến ${o.tripCode} (${o.departureTime} - ${o.arrivalTime}) trùng giờ`,
+        'VEHICLE_SCHEDULE_CONFLICT',
+      );
+    }
+  }
+}
+
 export const adminService = {
   /* ======================= USERS ======================= */
   async listUsers(q: Page & { search?: string; role?: string; status?: string }) {
@@ -74,7 +118,13 @@ export const adminService = {
     if (id === actor.userId && (data.role === 'USER' || data.status === 'LOCKED')) {
       throw AppError.badRequest('Không thể tự hạ quyền hoặc tự khóa tài khoản của chính mình', 'SELF_MODIFICATION');
     }
+    if (data.phone) {
+      const phone = normalizeVnPhone(data.phone);
+      if (!phone) throw AppError.badRequest('Số điện thoại không hợp lệ (vd: 0912345678)', 'INVALID_PHONE');
+      data = { ...data, phone };
+    }
     await userRepository.update(id, data);
+    invalidateUserCache(id);
     return this.getUser(id);
   },
 
@@ -196,7 +246,7 @@ export const adminService = {
   },
 
   /* ======================= TRIPS (Schedules) ======================= */
-  listTrips: (q: { routeId?: number; status?: string }) => tripRepository.list({ ...q, limit: 500 }),
+  listTrips: (q: { routeId?: number; status?: string }) => tripRepository.list({ ...q, limit: 3000 }),
 
   async getTrip(id: number) {
     const trip = ensure(await tripRepository.getById(id), 'Không tìm thấy chuyến', 'TRIP_NOT_FOUND');
@@ -204,17 +254,15 @@ export const adminService = {
   },
 
   async createTrip(data: TripInput) {
-    const route = ensure(await routeRepository.getById(data.routeId), 'Tuyến không tồn tại', 'ROUTE_NOT_FOUND');
-    const vehicle = ensure(await transportRepository.getVehicle(data.vehicleId), 'Phương tiện không tồn tại', 'VEHICLE_NOT_FOUND');
-    if (route.transportTypeId !== vehicle.transportTypeId) {
-      throw AppError.badRequest('Phương tiện không cùng loại với tuyến', 'VEHICLE_TYPE_MISMATCH');
-    }
+    await checkTrip(data);
     const id = await tripRepository.create(data);
     routingService.invalidate();
     return this.getTrip(id);
   },
 
   async updateTrip(id: number, data: Partial<TripInput>) {
+    const cur = ensure(await tripRepository.getById(id), 'Không tìm thấy chuyến', 'TRIP_NOT_FOUND');
+    await checkTrip({ ...cur, ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined)) } as TripInput, id);
     ensure(await tripRepository.update(id, data), 'Không tìm thấy chuyến', 'TRIP_NOT_FOUND');
     routingService.invalidate();
     return this.getTrip(id);

@@ -421,6 +421,15 @@ CREATE INDEX IX_OrderDetails_Order           ON OrderDetails(OrderId);
 CREATE INDEX IX_Payments_Order               ON Payments(OrderId);
 CREATE INDEX IX_Tickets_Order                ON Tickets(OrderId);
 CREATE INDEX IX_TripHistories_User           ON TripHistories(UserId, StartedAt DESC);
+CREATE INDEX IX_Vehicles_TransportType       ON Vehicles(TransportTypeId);
+CREATE INDEX IX_Trips_Vehicle                ON Trips(VehicleId, DepartureTime);
+CREATE INDEX IX_TicketTypes_TransportType    ON TicketTypes(TransportTypeId);
+CREATE INDEX IX_OrderDetails_TicketType      ON OrderDetails(TicketTypeId);
+CREATE INDEX IX_Tickets_TicketType           ON Tickets(TicketTypeId);
+CREATE INDEX IX_Routes_StartStation          ON Routes(StartStationId);
+CREATE INDEX IX_Routes_EndStation            ON Routes(EndStationId);
+CREATE INDEX IX_FareRules_From               ON FareRules(FromStationId);
+CREATE INDEX IX_FareRules_To                 ON FareRules(ToStationId);
 GO
 
 /* Kiem tra: phai co 20 bang */

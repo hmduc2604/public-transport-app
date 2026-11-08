@@ -22,10 +22,14 @@ export interface TripInput {
 }
 
 export const tripRepository = {
-  async list(opts: { routeId?: number; status?: string; limit?: number } = {}) {
+  async list(opts: { routeId?: number; status?: string; vehicleId?: number; limit?: number } = {}) {
     const pool = await getPool();
     const req = pool.request().input('limit', sql.Int, opts.limit ?? 1000);
     const where = ['1 = 1'];
+    if (opts.vehicleId) {
+      where.push('tr.VehicleId = @vehicleId');
+      req.input('vehicleId', sql.Int, opts.vehicleId);
+    }
     if (opts.routeId) {
       where.push('tr.RouteId = @routeId');
       req.input('routeId', sql.Int, opts.routeId);

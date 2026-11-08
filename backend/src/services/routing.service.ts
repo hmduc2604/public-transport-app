@@ -75,6 +75,10 @@ async function resolveLocation(input: LocationInput | undefined, label: string):
   if (!isValidLatLng(lat, lng)) {
     throw AppError.badRequest(`${label} cần latitude/longitude hợp lệ, hoặc stationId, hoặc attractionId`, 'INVALID_LOCATION');
   }
+  const a = ROUTING_CONFIG.serviceArea;
+  if (lat < a.minLat || lat > a.maxLat || lng < a.minLng || lng > a.maxLng) {
+    throw AppError.badRequest(`${label[0].toUpperCase()}${label.slice(1)} nằm ngoài khu vực Hà Nội mà hệ thống hỗ trợ`, 'OUT_OF_SERVICE_AREA');
+  }
   return { name: input.name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`, latitude: lat, longitude: lng };
 }
 
@@ -108,7 +112,10 @@ export const routingService = {
       resolveLocation(body.destination, 'điểm đến'),
     ]);
 
-    const departure = body.departureTime && /^\d{2}:\d{2}/.test(body.departureTime) ? body.departureTime.slice(0, 5) : currentHanoiTime();
+    if (body.departureTime && !/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(String(body.departureTime))) {
+      throw AppError.badRequest('Giờ khởi hành phải có dạng HH:mm (00:00 - 23:59)', 'INVALID_TIME');
+    }
+    const departure = body.departureTime ? String(body.departureTime).slice(0, 5) : currentHanoiTime();
     const net = await getNetwork();
     const passTransportTypeIds = userId ? await ticketRepository.activePassTransportTypes(userId) : [];
 
