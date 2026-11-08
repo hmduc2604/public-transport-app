@@ -1,5 +1,5 @@
 import { api } from './api';
-import { Order, Paginated, Statistics, Ticket, User } from '../types';
+import { AdminPayment, Order, Paginated, PaymentSettings, Statistics, Ticket, User } from '../types';
 
 type Q = Record<string, string | number | undefined>;
 
@@ -31,7 +31,13 @@ export const adminApi = {
   verifyTicket: (qrData: string, markUsed = true) =>
     api.post<{ valid: boolean; reason: string; ticket: Ticket | null }>('/admin/tickets/verify', { qrData, markUsed }),
 
-  payments: (q: Q) => api.get<Paginated<any>>('/admin/payments', q),
+  payments: (q: Q) => api.get<Paginated<AdminPayment>>('/admin/payments', q),
+  confirmPayment: (id: number, bankReference?: string) => api.post<AdminPayment>(`/admin/payments/${id}/confirm`, { bankReference }),
+  rejectPayment: (id: number, note?: string) => api.post<AdminPayment>(`/admin/payments/${id}/reject`, { note }),
+  paymentSettings: () => api.get<PaymentSettings>('/admin/payment-settings'),
+  updatePaymentSettings: (data: { bankBin: string; accountNo: string; accountName: string; transferExpiryMinutes: number }) =>
+    api.put<PaymentSettings>('/admin/payment-settings', data),
+  clearPaymentSettings: () => api.delete<PaymentSettings>('/admin/payment-settings'),
 
   routeStations: (id: number) => api.get<any[]>(`/admin/routes/${id}/stations`),
   replaceRouteStations: (id: number, stations: { stationId: number; distanceFromStart?: number | null }[]) =>

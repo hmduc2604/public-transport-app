@@ -303,17 +303,114 @@ export interface Order {
   ticketCount: number;
   itemsSummary?: string;
   items?: OrderItem[];
-  payments?: { paymentId: number; amount: number; status: string; transactionCode: string | null; paidAt: string | null }[];
+  payments?: {
+    paymentId: number;
+    amount: number;
+    paymentMethod: PaymentMethod;
+    status: PaymentStatus;
+    transactionCode: string | null;
+    paidAt: string | null;
+    cardBrand: string | null;
+    cardLast4: string | null;
+    transferContent: string | null;
+    expiresAt: string | null;
+    customerNotifiedAt: string | null;
+    note: string | null;
+  }[];
   tickets?: { ticketId: number; ticketCode: string; status: TicketStatus; validFrom: string; validTo: string }[];
 }
 
-export interface PaymentResult {
+export type PaymentMethod = 'CARD' | 'BANK_TRANSFER' | 'MOCK';
+export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'EXPIRED' | 'CANCELLED';
+export type CardKind = 'INTERNATIONAL' | 'DOMESTIC';
+
+export interface Bank {
+  bin: string;
+  code: string;
+  name: string;
+}
+
+export interface PaymentMethods {
+  card: { enabled: boolean; simulated: boolean };
+  bankTransfer: { enabled: boolean; bankName: string | null; expiryMinutes: number; autoConfirm: boolean };
+  banks: Bank[];
+}
+
+export interface CardPaymentInput {
+  orderId: number;
+  cardKind: CardKind;
+  cardNumber: string;
+  cardHolder: string;
+  expiry: string;
+  cvv?: string;
+  bankBin?: string;
+}
+
+export interface CardPaymentResult {
   paymentId: number;
   orderId: number;
   amount: number;
   status: 'SUCCESS' | 'FAILED';
+  message: string | null;
+  cardBrand: string;
+  cardLast4: string;
   ticketIds: number[];
   order: Order;
+}
+
+/** Giao dich chuyen khoan QR (va trang thai chung cua 1 payment) */
+export interface PaymentView {
+  paymentId: number;
+  orderId: number;
+  paymentMethod: PaymentMethod;
+  status: PaymentStatus;
+  amount: number;
+  transferContent: string | null;
+  expiresAt: string | null;
+  secondsLeft: number | null;
+  customerNotifiedAt: string | null;
+  paidAt: string | null;
+  confirmedBy: string | null;
+  note: string | null;
+  cardBrand: string | null;
+  cardLast4: string | null;
+  bank: { bin: string; code: string | null; name: string; accountNo: string; accountName: string } | null;
+  qrPayload: string | null;
+  qrImage: string | null;
+  ticketIds: number[];
+}
+
+export interface PaymentSettings {
+  bankBin: string | null;
+  bankName: string | null;
+  accountNo: string | null;
+  accountName: string | null;
+  transferExpiryMinutes: number;
+  updatedAt: string | null;
+  banks: Bank[];
+}
+
+export interface AdminPayment {
+  paymentId: number;
+  orderId: number;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  status: PaymentStatus;
+  transactionCode: string | null;
+  paidAt: string | null;
+  cardBrand: string | null;
+  cardLast4: string | null;
+  transferContent: string | null;
+  expiresAt: string | null;
+  customerNotifiedAt: string | null;
+  confirmedBy: string | null;
+  bankReference: string | null;
+  note: string | null;
+  createdAt: string;
+  orderStatus: string;
 }
 
 export interface TripHistory {

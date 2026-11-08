@@ -59,18 +59,6 @@ export const ticketController = {
     return ok(res, await orderService.cancel(parseId(req.params.id), req.user!), 'Đã hủy đơn hàng');
   },
 
-  /* ---------- Payments ---------- */
-  async pay(req: Request, res: Response) {
-    const { orderId, simulate } = validate<{ orderId: number; simulate?: 'SUCCESS' | 'FAILED' }>(req.body, schemas.payment);
-    const result = await orderService.pay(req.user!, orderId, simulate ?? 'SUCCESS');
-    return ok(
-      res,
-      result,
-      result.status === 'SUCCESS' ? 'Thanh toán thành công' : 'Thanh toán thất bại (mô phỏng)',
-      result.status === 'SUCCESS' ? 201 : 200,
-    );
-  },
-
   /* ---------- Trip histories ---------- */
   async tripHistories(req: Request, res: Response) {
     return ok(res, await tripHistoryService.list(req.user!.userId));

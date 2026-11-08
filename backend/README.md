@@ -82,6 +82,7 @@ src/
 
 **3. Toàn vẹn dữ liệu**
 - Thanh toán chạy trong **1 transaction** + khóa dòng `UPDLOCK`: Payment SUCCESS → Order PAID → sinh Tickets. Lỗi giữa chừng → rollback, không bao giờ "trừ tiền mà không có vé", không thanh toán 2 lần.
+- 2 phương thức: **thẻ** (`utils/card.ts`, cổng thử nghiệm, chỉ lưu 4 số cuối) và **chuyển khoản VietQR** (`utils/vietqr.ts`, chuẩn EMVCo/Napas 247 + CRC16). Chuyển khoản ở trạng thái PENDING tới khi admin xác nhận hoặc webhook SePay báo tiền về (`services/payment.service.ts`).
 - Xóa mềm (`Status = 'INACTIVE'`) cho Trạm, Tuyến, Loại vé, Loại phương tiện, Điểm tham quan → không làm vỡ lịch sử đơn hàng/vé.
 - Xóa cứng Phương tiện/Chuyến/Bảng giá; nếu đang được tham chiếu SQL báo lỗi 547 → API trả 409 `CONSTRAINT_VIOLATION`.
 

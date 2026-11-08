@@ -1,45 +1,22 @@
-/** Thanh toan mo phong: Payment SUCCESS -> sinh ve + QR */
-import { useState } from 'react';
+/**
+ * Chon phuong thuc thanh toan cho don hang:
+ *   - The ngan hang  -> /payment/:orderId/card
+ *   - Chuyen khoan QR -> /payment/:orderId/transfer
+ */
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ticketApi } from '../services/ticketApi';
 import { paymentApi } from '../services/paymentApi';
-import { errorMessage } from '../services/api';
 import { useAsync } from '../utils/useAsync';
-import { ErrorBox, Loading, StatusBadge } from '../components/Feedback';
-import { formatDateTime, formatMoney } from '../utils/format';
-import { STATUS_LABEL } from '../utils/modes';
-import { PaymentResult } from '../types';
-
-const METHODS = [
-  { id: 'wallet', label: 'Ví điện tử (mô phỏng)', icon: '📱' },
-  { id: 'card', label: 'Thẻ ngân hàng (mô phỏng)', icon: '💳' },
-  { id: 'qr', label: 'Chuyển khoản QR (mô phỏng)', icon: '🏦' },
-];
+import { ErrorBox, Loading } from '../components/Feedback';
+import { OrderSummary } from '../components/payment/OrderSummary';
+import { PaymentSuccess } from '../components/payment/PaymentSuccess';
+import { formatDateTime } from '../utils/format';
 
 export default function PaymentPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const { data: order, loading, error, reload } = useAsync(() => ticketApi.order(Number(orderId)), [orderId]);
-  const [method, setMethod] = useState(METHODS[0].id);
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<PaymentResult | null>(null);
-  const [payError, setPayError] = useState<string | null>(null);
-
-  const pay = async (simulate: 'SUCCESS' | 'FAILED') => {
-    setBusy(true);
-    setPayError(null);
-    try {
-      // Gia lap do tre cua cong thanh toan
-      await new Promise((r) => setTimeout(r, 900));
-      const r = await paymentApi.pay(Number(orderId), simulate);
-      setResult(r);
-      if (r.status === 'SUCCESS') reload();
-    } catch (e) {
-      setPayError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  };
+  const { data: order, loading, error } = useAsync(() => ticketApi.order(Number(orderId)), [orderId]);
+  const { data: methods } = useAsync(() => paymentApi.methods(), []);
 
   const cancel = async () => {
     await ticketApi.cancelOrder(Number(orderId)).catch(() => undefined);
@@ -49,84 +26,91 @@ export default function PaymentPage() {
   if (loading) return <Loading />;
   if (error || !order) return <div className="page"><ErrorBox message={error ?? 'Không tìm thấy đơn'} /></div>;
 
-  if (result?.status === 'SUCCESS' || order.status === 'PAID') {
-    const ticketIds = result?.ticketIds ?? order.tickets?.map((t) => t.ticketId) ?? [];
-    return (
-      <div className="page narrow">
-        <div className="card success-card">
-          <div className="success-icon">✓</div>
-          <h1>Thanh toán thành công</h1>
-          <p className="muted">
-            Đơn #{order.orderId} · {formatMoney(order.totalAmount)} · {ticketIds.length} vé đã được phát hành
-          </p>
-          <div className="row gap center-row">
-            {ticketIds.length === 1 ? (
-              <button className="btn btn-primary" onClick={() => navigate(`/tickets/${ticketIds[0]}`)}>
-                Xem vé QR
-              </button>
-            ) : (
-              <button className="btn btn-primary" onClick={() => navigate('/tickets')}>
-                Xem vé của tôi
-              </button>
-            )}
-            <Link to="/map" className="btn btn-ghost">
-              Tiếp tục tìm đường
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+  if (order.status === 'PAID') {
+    return <PaymentSuccess orderId={order.orderId} amount={order.totalAmount} ticketIds={order.tickets?.map((t) => t.ticketId) ?? []} />;
   }
+
+  const pendingTransfer = order.payments?.find((p) => p.paymentMethod === 'BANK_TRANSFER' && p.status === 'PENDING');
+  const lastFailedCard = order.payments?.[0]?.paymentMethod === 'CARD' && order.payments[0].status === 'FAILED' ? order.payments[0] : null;
+  const transferOn = methods?.bankTransfer.enabled ?? true;
 
   return (
     <div className="page narrow">
       <h1>Thanh toán</h1>
-      <div className="card">
-        <div className="row space-between">
-          <strong>Đơn hàng #{order.orderId}</strong>
-          <StatusBadge status={order.status} label={STATUS_LABEL[order.status]} />
-        </div>
-        <div className="muted small">Tạo lúc {formatDateTime(order.createdAt)}</div>
-        <ul className="order-lines">
-          {order.items?.map((it) => (
-            <li key={it.orderDetailId}>
-              <span>
-                {it.ticketTypeName} × {it.quantity}
-              </span>
-              <span>{formatMoney(it.subtotal)}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="order-total">
-          <span>Tổng thanh toán</span>
-          <strong>{formatMoney(order.totalAmount)}</strong>
-        </div>
-      </div>
+      <OrderSummary order={order} />
 
       {order.status === 'CANCELLED' ? (
-        <div className="alert alert-error">Đơn hàng đã bị hủy.</div>
+        <div className="alert alert-error">
+          <span>
+            Đơn hàng đã bị hủy. <Link to="/tickets/buy">Mua vé mới</Link>
+          </span>
+        </div>
       ) : (
         <div className="card">
-          <h3>Phương thức thanh toán</h3>
-          <div className="methods">
-            {METHODS.map((m) => (
-              <label key={m.id} className={`method${method === m.id ? ' active' : ''}`}>
-                <input type="radio" name="method" checked={method === m.id} onChange={() => setMethod(m.id)} />
-                <span className="method-icon">{m.icon}</span> {m.label}
-              </label>
-            ))}
+          <h3>Chọn phương thức thanh toán</h3>
+          {pendingTransfer && (
+            <div className="alert alert-warn">
+              <span>
+                Bạn có mã chuyển khoản <b className="mono">{pendingTransfer.transferContent}</b> đang chờ (hạn {formatDateTime(pendingTransfer.expiresAt)}).
+              </span>
+              <Link className="btn btn-sm btn-ghost" to={`/payment/${order.orderId}/transfer`}>
+                Tiếp tục chuyển khoản
+              </Link>
+            </div>
+          )}
+          {lastFailedCard && (
+            <div className="alert alert-error">
+              Giao dịch thẻ •••• {lastFailedCard.cardLast4} bị từ chối{lastFailedCard.note ? `: ${lastFailedCard.note}` : ''}. Vui lòng thử lại.
+            </div>
+          )}
+          <div className="pay-options">
+            <Link to={`/payment/${order.orderId}/card`} className="pay-option">
+              <span className="pay-option-icon" aria-hidden>
+                💳
+              </span>
+              <span className="pay-option-text">
+                <strong>Thẻ ngân hàng</strong>
+                <span className="small muted">Visa, Mastercard, JCB, AMEX hoặc thẻ ATM nội địa (NAPAS)</span>
+                <span className="pay-option-tags">
+                  <span className="tag">Vé phát hành ngay</span>
+                </span>
+              </span>
+              <span className="pay-option-go" aria-hidden>
+                ›
+              </span>
+            </Link>
+            {transferOn ? (
+              <Link to={`/payment/${order.orderId}/transfer`} className="pay-option">
+                <span className="pay-option-icon" aria-hidden>
+                  🏦
+                </span>
+                <span className="pay-option-text">
+                  <strong>Chuyển khoản QR</strong>
+                  <span className="small muted">
+                    Quét mã VietQR bằng app ngân hàng bất kỳ{methods?.bankTransfer.bankName ? ` · nhận tiền tại ${methods.bankTransfer.bankName}` : ''}
+                  </span>
+                  <span className="pay-option-tags">
+                    <span className="tag">Vé phát hành khi tiền về tài khoản</span>
+                  </span>
+                </span>
+                <span className="pay-option-go" aria-hidden>
+                  ›
+                </span>
+              </Link>
+            ) : (
+              <div className="pay-option disabled" aria-disabled>
+                <span className="pay-option-icon" aria-hidden>
+                  🏦
+                </span>
+                <span className="pay-option-text">
+                  <strong>Chuyển khoản QR</strong>
+                  <span className="small muted">Tạm chưa mở: quản trị viên chưa cài đặt tài khoản nhận tiền.</span>
+                </span>
+              </div>
+            )}
           </div>
-          <p className="muted small">Đây là thanh toán mô phỏng (MOCK) phục vụ đồ án, không trừ tiền thật.</p>
-          {result?.status === 'FAILED' && <div className="alert alert-error">Giao dịch thất bại (mô phỏng). Bạn có thể thử lại.</div>}
-          {payError && <ErrorBox message={payError} />}
-          <div className="row gap wrap">
-            <button className="btn btn-primary" disabled={busy} onClick={() => pay('SUCCESS')}>
-              {busy ? 'Đang xử lý...' : `Thanh toán ${formatMoney(order.totalAmount)}`}
-            </button>
-            <button className="btn btn-ghost" disabled={busy} onClick={() => pay('FAILED')} title="Dùng khi demo trường hợp lỗi">
-              Mô phỏng thất bại
-            </button>
-            <button className="btn btn-ghost danger" disabled={busy} onClick={cancel}>
+          <div className="row end">
+            <button className="btn btn-ghost danger btn-sm" onClick={cancel}>
               Hủy đơn
             </button>
           </div>

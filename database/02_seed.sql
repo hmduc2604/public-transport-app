@@ -1263,10 +1263,13 @@ INSERT INTO OrderDetails (OrderId, TicketTypeId, Quantity, UnitPrice) VALUES
 (2, 4, 1, 300000),
 (3, 2, 1, 15000);
 
-INSERT INTO Payments (OrderId, Amount, PaymentMethod, Status, TransactionCode, PaidAt) VALUES
-(1, 7000,   'MOCK', 'SUCCESS', 'MOCK-TXN-000001', SYSDATETIME()),
-(2, 300000, 'MOCK', 'SUCCESS', 'MOCK-TXN-000002', SYSDATETIME()),
-(3, 15000,  'MOCK', 'PENDING', NULL, NULL);
+INSERT INTO Payments (OrderId, Amount, PaymentMethod, Status, TransactionCode, PaidAt, CardBrand, CardLast4, TransferContent, ExpiresAt) VALUES
+(1, 7000,   'CARD',          'SUCCESS', 'CARD-TXN-000001', SYSDATETIME(), 'VISA', '4242', NULL, NULL),
+(2, 300000, 'BANK_TRANSFER', 'SUCCESS', 'BANK-TXN-000002', SYSDATETIME(), NULL, NULL, 'HNG2SEED', NULL),
+(3, 15000,  'BANK_TRANSFER', 'EXPIRED', NULL, NULL, NULL, NULL, 'HNG3SEED', DATEADD(MINUTE, -30, SYSDATETIME()));
+
+-- Tai khoan nhan chuyen khoan: de trong, admin dien tai Quan tri > Thanh toan
+INSERT INTO PaymentSettings (SettingId, TransferExpiryMinutes) VALUES (1, 30);
 
 INSERT INTO Tickets (OrderId, TicketTypeId, TicketCode, QRCode, ValidFrom, ValidTo, Status) VALUES
 (1, 1, 'TICKET-000001', NULL, SYSDATETIME(), DATEADD(HOUR, 2, SYSDATETIME()), 'ACTIVE'),
@@ -1293,9 +1296,11 @@ BEGIN
     INSERT INTO OrderDetails (OrderId, TicketTypeId, Quantity, UnitPrice)
     VALUES (@OrderId, @TypeId, @Qty, @Price);
 
-    INSERT INTO Payments (OrderId, Amount, PaymentMethod, Status, TransactionCode, PaidAt)
-    VALUES (@OrderId, @Price * @Qty, 'MOCK', 'SUCCESS',
-            CONCAT('MOCK-TXN-', RIGHT('000000' + CAST(@OrderId AS VARCHAR(10)), 6)), @CreatedAt);
+    INSERT INTO Payments (OrderId, Amount, PaymentMethod, Status, TransactionCode, PaidAt, CardBrand, CardLast4, CreatedAt)
+    VALUES (@OrderId, @Price * @Qty, 'CARD', 'SUCCESS',
+            CONCAT('CARD-TXN-', RIGHT('000000' + CAST(@OrderId AS VARCHAR(10)), 6)), @CreatedAt,
+            CASE @OrderId % 3 WHEN 0 THEN 'MASTERCARD' WHEN 1 THEN 'VISA' ELSE 'NAPAS' END,
+            RIGHT('0000' + CAST((@OrderId * 37) % 10000 AS VARCHAR(4)), 4), @CreatedAt);
 
     DECLARE @k INT = 1;
     WHILE @k <= @Qty

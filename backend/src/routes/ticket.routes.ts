@@ -1,4 +1,4 @@
-/** Ve, don hang, thanh toan, lich su - (Nguoi 2) */
+/** Ve, don hang, lich su - (Nguoi 2). Thanh toan: payment.routes.ts */
 import { Router } from 'express';
 import { ticketController as c } from '../controllers/ticket.controller';
 import { authenticate } from '../middleware/auth.middleware';
@@ -20,8 +20,6 @@ router.post('/orders', authenticate, h(c.createOrder));
 router.get('/orders/me', authenticate, h(c.myOrders));
 router.get('/orders/:id', authenticate, h(c.orderDetail));
 router.post('/orders/:id/cancel', authenticate, h(c.cancelOrder));
-
-router.post('/payments', authenticate, h(c.pay));
 
 router.get('/trip-histories', authenticate, h(c.tripHistories));
 router.post('/trip-histories', authenticate, h(c.createTripHistory));

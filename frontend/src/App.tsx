@@ -2,7 +2,7 @@
  * Dinh tuyen frontend (theo tai lieu muc 11 - Frontend routing)
  *
  *  /login /register /  /map  /attractions/:id
- *  /tickets/buy  /payment/:orderId  /tickets  /tickets/:id  /history  /profile
+ *  /tickets/buy  /payment/:orderId (/card, /transfer)  /tickets  /tickets/:id  /history  /profile
  *  /admin/...
  */
 import { ReactElement } from 'react';
@@ -18,6 +18,8 @@ import AttractionDetailPage from './pages/AttractionDetailPage';
 import MapPage from './pages/MapPage';
 import BuyTicketPage from './pages/BuyTicketPage';
 import PaymentPage from './pages/PaymentPage';
+import CardPaymentPage from './pages/CardPaymentPage';
+import TransferPaymentPage from './pages/TransferPaymentPage';
 import TicketsPage from './pages/TicketsPage';
 import TicketDetailPage from './pages/TicketDetailPage';
 import HistoryPage from './pages/HistoryPage';
@@ -27,6 +29,7 @@ import DashboardPage from './pages/admin/DashboardPage';
 import UsersPage from './pages/admin/UsersPage';
 import OrdersPage from './pages/admin/OrdersPage';
 import TicketsAdminPage from './pages/admin/TicketsAdminPage';
+import PaymentsAdminPage from './pages/admin/PaymentsAdminPage';
 import {
   AttractionsAdminPage,
   FareRulesPage,
@@ -75,6 +78,8 @@ export default function App() {
         <Route path="/attractions/:id" element={attractionGate(<AttractionDetailPage />)} />
         <Route path="/tickets/buy" element={<BuyTicketPage />} />
         <Route path="/payment/:orderId" element={auth(<PaymentPage />)} />
+        <Route path="/payment/:orderId/card" element={auth(<CardPaymentPage />)} />
+        <Route path="/payment/:orderId/transfer" element={auth(<TransferPaymentPage />)} />
         <Route path="/tickets" element={auth(<TicketsPage />)} />
         <Route path="/tickets/:id" element={auth(<TicketDetailPage />)} />
         <Route path="/qr/:id" element={auth(<TicketDetailPage />)} />
@@ -104,6 +109,7 @@ export default function App() {
         <Route path="fares" element={<FareRulesPage />} />
         <Route path="orders" element={<OrdersPage />} />
         <Route path="tickets" element={<TicketsAdminPage />} />
+        <Route path="payments" element={<PaymentsAdminPage />} />
       </Route>
     </Routes>
   );

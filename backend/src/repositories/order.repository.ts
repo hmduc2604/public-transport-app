@@ -1,4 +1,4 @@
-/** Repository: Orders + OrderDetails + Payments */
+/** Repository: Orders + OrderDetails (giao dich thanh toan: payment.repository.ts) */
 import { getPool, sql } from '../config/database';
 import { withTransaction } from '../utils/sqlHelpers';
 
@@ -51,7 +51,9 @@ export const orderRepository = {
       JOIN TransportTypes t ON tt.TransportTypeId = t.TransportTypeId
       WHERE d.OrderId = @id;
       SELECT PaymentId AS paymentId, CAST(Amount AS FLOAT) AS amount, PaymentMethod AS paymentMethod,
-             Status AS status, TransactionCode AS transactionCode, PaidAt AS paidAt
+             Status AS status, TransactionCode AS transactionCode, PaidAt AS paidAt,
+             CardBrand AS cardBrand, CardLast4 AS cardLast4, TransferContent AS transferContent,
+             ExpiresAt AS expiresAt, CustomerNotifiedAt AS customerNotifiedAt, Note AS note
       FROM Payments WHERE OrderId = @id ORDER BY PaymentId DESC;
       SELECT TicketId AS ticketId, TicketCode AS ticketCode, Status AS status, ValidFrom AS validFrom, ValidTo AS validTo
       FROM Tickets WHERE OrderId = @id ORDER BY TicketId;`);
@@ -108,24 +110,4 @@ export const orderRepository = {
     return r.rowsAffected[0] > 0;
   },
 
-  /* ---------------- Payments ---------------- */
-  async listPayments(opts: { status?: string; offset: number; pageSize: number }) {
-    const pool = await getPool();
-    const req = pool.request().input('offset', sql.Int, opts.offset).input('pageSize', sql.Int, opts.pageSize);
-    let w = '1 = 1';
-    if (opts.status) {
-      w = 'p.Status = @status';
-      req.input('status', sql.VarChar(20), opts.status);
-    }
-    const r = await req.query(`
-      SELECT COUNT(*) AS total FROM Payments p WHERE ${w};
-      SELECT p.PaymentId AS paymentId, p.OrderId AS orderId, CAST(p.Amount AS FLOAT) AS amount,
-             p.PaymentMethod AS paymentMethod, p.Status AS status, p.TransactionCode AS transactionCode,
-             p.PaidAt AS paidAt, u.FullName AS userName, u.Email AS userEmail
-      FROM Payments p JOIN Orders o ON p.OrderId = o.OrderId JOIN Users u ON o.UserId = u.UserId
-      WHERE ${w}
-      ORDER BY p.PaymentId DESC OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;`);
-    const sets = r.recordsets as any[];
-    return { total: sets[0][0].total as number, items: sets[1] as any[] };
-  },
 };

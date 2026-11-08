@@ -50,6 +50,11 @@ router.post('/tickets/verify', h(c.verifyTicket));
 router.patch('/tickets/:id/status', h(c.updateTicketStatus));
 
 router.get('/payments', h(c.listPayments));
+router.post('/payments/:id/confirm', h(c.confirmTransfer));
+router.post('/payments/:id/reject', h(c.rejectTransfer));
+router.get('/payment-settings', h(c.paymentSettings));
+router.put('/payment-settings', h(c.updatePaymentSettings));
+router.delete('/payment-settings', h(c.clearPaymentSettings));
 
 router.get('/statistics', h(c.statistics));
 router.post('/routing/rebuild', h(c.rebuildGraph));
