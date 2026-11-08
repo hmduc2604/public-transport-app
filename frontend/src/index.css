@@ -510,3 +510,12 @@ textarea.input { resize: vertical; }
 .otp-actions { margin-top: 0.9rem; gap: 0.6rem; flex-wrap: wrap; }
 .link-btn:disabled { opacity: 0.55; cursor: default; text-decoration: none; }
 @media (max-width: 420px) { .channel-options { grid-template-columns: 1fr; } }
+
+/* ---------- Yeu cau dang nhap (xem dia diem / chi duong) ---------- */
+.login-gate { text-align: center; max-width: 460px; }
+.login-gate-icon { width: 4rem; height: 4rem; margin: 0 auto 0.8rem; display: grid; place-items: center; font-size: 2rem; border-radius: 999px; background: #fdf3dc; border: 1px solid #f1d899; }
+.login-gate h1 { font-size: 1.45rem; margin: 0 0 0.5rem; }
+.login-gate-perks { text-align: left; margin: 1rem 0 1.2rem; padding: 0.85rem 1rem 0.85rem 2.1rem; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: 0.9rem; display: grid; gap: 0.35rem; }
+.login-gate-perks li::marker { content: '✓  '; color: #17603f; font-weight: 700; }
+.login-gate-actions { display: grid; gap: 0.55rem; }
+.login-gate-back { display: inline-block; margin-top: 1rem; color: var(--muted); }

@@ -10,6 +10,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { AdminLayout } from './layouts/AdminLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { LoginRequired } from './components/LoginRequired';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
@@ -39,6 +40,28 @@ import {
 
 const auth = (el: ReactElement) => <ProtectedRoute>{el}</ProtectedRoute>;
 
+/** Xem chi tiet dia diem / chi duong: chua dang nhap -> hien thong bao dang nhap hoac dang ky */
+const attractionGate = (el: ReactElement) => (
+  <LoginRequired
+    icon="🏛️"
+    title="Đăng nhập để xem thông tin địa điểm"
+    message="Thông tin chi tiết địa điểm chỉ dành cho thành viên HanoiGo. Đăng nhập hoặc tạo tài khoản miễn phí để xem tiếp."
+    perks={['Giờ mở cửa, giá vé, lưu ý khi tham quan', 'Bộ sưu tập ảnh của địa điểm', 'Trạm xe buýt, Metro, xe đạp gần nhất và chỉ đường đến nơi']}
+  >
+    {el}
+  </LoginRequired>
+);
+const mapGate = (el: ReactElement) => (
+  <LoginRequired
+    icon="🧭"
+    title="Đăng nhập để dùng bản đồ và chỉ đường"
+    message="Tính năng tìm lộ trình chỉ dành cho thành viên HanoiGo. Đăng nhập hoặc tạo tài khoản miễn phí để bắt đầu."
+    perks={['Tìm đường bằng xe buýt, Metro, xe đạp, xe điện theo đường phố thật', 'Chọn tiêu chí: nhanh nhất, rẻ nhất, ít đi bộ, ít chuyển tuyến', 'Lưu lịch sử chuyến đi và mua vé ngay trên lộ trình']}
+  >
+    {el}
+  </LoginRequired>
+);
+
 export default function App() {
   return (
     <Routes>
@@ -47,9 +70,9 @@ export default function App() {
         <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/map" element={<MapPage />} />
+        <Route path="/map" element={mapGate(<MapPage />)} />
         <Route path="/search" element={<Navigate to="/map" replace />} />
-        <Route path="/attractions/:id" element={<AttractionDetailPage />} />
+        <Route path="/attractions/:id" element={attractionGate(<AttractionDetailPage />)} />
         <Route path="/tickets/buy" element={<BuyTicketPage />} />
         <Route path="/payment/:orderId" element={auth(<PaymentPage />)} />
         <Route path="/tickets" element={auth(<TicketsPage />)} />

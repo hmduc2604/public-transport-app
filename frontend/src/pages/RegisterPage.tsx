@@ -4,7 +4,7 @@
  *   2. Nhap ma 6 so -> backend tao tai khoan trong database va dang nhap
  */
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../services/authApi';
 import { errorMessage } from '../services/api';
@@ -28,6 +28,9 @@ const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '
 export default function RegisterPage() {
   const { register, verifyRegistration } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  /** Trang nguoi dung dinh xem truoc khi bi yeu cau dang nhap */
+  const from = (location.state as { from?: string } | null)?.from;
   const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', confirm: '' });
   const [channel, setChannel] = useState<VerifyChannel>('EMAIL');
   const [channels, setChannels] = useState<VerificationChannels | null>(null);
@@ -86,7 +89,7 @@ export default function RegisterPage() {
     setError(null);
     try {
       await verifyRegistration(info.verificationId, code);
-      navigate('/', { replace: true });
+      navigate(from || '/', { replace: true });
     } catch (err) {
       setError(errorMessage(err));
       setCode('');
@@ -232,7 +235,10 @@ export default function RegisterPage() {
           <p className="small muted center">Hệ thống chưa cấu hình gửi email/SMS, tạm thời chưa thể đăng ký.</p>
         )}
         <p className="small center">
-          Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
+          Đã có tài khoản?{' '}
+          <Link to="/login" state={from ? { from } : undefined}>
+            Đăng nhập
+          </Link>
         </p>
       </form>
     </div>

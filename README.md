@@ -173,3 +173,9 @@ TWILIO_FROM=+1xxxxxxxxxx
 
 Kiểm tra: mở `http://localhost:5000/api/v1/auth/verification-channels` → `"email": true` / `"sms": true` là đã sẵn sàng.
 
+## Yêu cầu đăng nhập khi xem chi tiết
+
+- Khách chưa đăng nhập vẫn xem được trang chủ và danh sách **Khám phá**.
+- Bấm vào một địa điểm (`/attractions/:id`) hoặc mở **Bản đồ & Tìm đường** (`/map`) khi chưa đăng nhập → hiện thông báo kèm nút **Đăng nhập** / **Đăng ký tài khoản mới** (`components/LoginRequired.tsx`).
+- Đăng nhập hoặc đăng ký xong sẽ tự quay lại đúng trang đang định xem; đã đăng nhập thì xem bình thường.
+
