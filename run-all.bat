@@ -97,7 +97,12 @@ call :log "5/7 Ghi backend\.env"
 >> "%ROOT%backend\.env" echo DB_PASSWORD=%SA_PASSWORD%
 >> "%ROOT%backend\.env" echo DB_ENCRYPT=false
 >> "%ROOT%backend\.env" echo DB_TRUST_SERVER_CERTIFICATE=true
->> "%ROOT%backend\.env" echo JWT_SECRET=hanoigo_dev_jwt_secret_change_me_2026
+rem Khoa ky JWT rieng cho may nay (ngau nhien, tao 1 lan, khong day len GitHub)
+if not exist "%ROOT%backend\.jwt-secret" node -e "process.stdout.write(require('crypto').randomBytes(48).toString('hex'))" > "%ROOT%backend\.jwt-secret"
+set "JWT_SECRET="
+if exist "%ROOT%backend\.jwt-secret" set /p JWT_SECRET=<"%ROOT%backend\.jwt-secret"
+if not defined JWT_SECRET set "JWT_SECRET=hanoigo_dev_jwt_secret_change_me_2026"
+>> "%ROOT%backend\.env" echo JWT_SECRET=%JWT_SECRET%
 >> "%ROOT%backend\.env" echo JWT_EXPIRES_IN=7d
 >> "%ROOT%backend\.env" echo QR_SECRET=hanoigo_dev_qr_secret_2026
 

@@ -9,6 +9,9 @@ export const tripHistoryService = {
     userId: number,
     data: { origin: string; destination: string; routeData?: unknown; startedAt?: string; completedAt?: string },
   ) {
+    if (data.routeData !== undefined && JSON.stringify(data.routeData).length > 200_000) {
+      throw AppError.badRequest('Dữ liệu lộ trình quá lớn (tối đa 200 KB)', 'ROUTE_DATA_TOO_LARGE');
+    }
     const id = await tripHistoryRepository.create({
       userId,
       origin: data.origin,

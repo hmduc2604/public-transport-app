@@ -57,7 +57,7 @@ export const attractionRepository = {
       where.push('(a.Name LIKE @search OR a.Description LIKE @search OR a.Address LIKE @search OR a.Category LIKE @search)');
       req.input('search', sql.NVarChar(200), `%${opts.search}%`);
     }
-    const order = SORTS[opts.sort ?? 'popular'] ?? SORTS.popular;
+    const order = opts.sort && Object.prototype.hasOwnProperty.call(SORTS, opts.sort) ? SORTS[opts.sort] : SORTS.popular;
     const r = await req.query(`SELECT ${FIELDS} FROM TouristAttractions a WHERE ${where.join(' AND ')} ORDER BY ${order}`);
     return r.recordset;
   },

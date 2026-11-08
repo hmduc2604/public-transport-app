@@ -60,6 +60,9 @@ export const ROUTING_CONFIG = {
   /** Khoang cach toi da de goi y di bo thang tu diem di toi diem den (met) */
   maxDirectWalkM: 1500,
 
+  /** Vung phuc vu (TP Ha Noi): diem nam ngoai -> bao loi thay vi "di bo" hang tram km */
+  serviceArea: { minLat: 20.53, maxLat: 21.42, minLng: 105.28, maxLng: 106.03 },
+
   /**
    * Xe dap / xe dien cong cong: duoc lay xe o tram bat ky va tra o tram
    * cung loai khac trong ban kinh nay (met) - mo phong he thong bike-sharing.

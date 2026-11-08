@@ -35,7 +35,11 @@ export function validate<T = Record<string, any>>(body: any, schema: Schema, par
 
     if (isEmpty) {
       if (rule.required && !partial) errors[key] = `${label} là bắt buộc`;
-      else if (value === null || value === '') out[key] = null; // cho phep xoa gia tri
+      else if (value === null || value === '') {
+        // PUT/PATCH gui '' cho truong bat buoc (hoac co do dai toi thieu) -> bao loi, khong ghi NULL vao DB
+        if (rule.required || (rule.type === 'string' && rule.min)) errors[key] = `${label} không được để trống`;
+        else out[key] = null; // cho phep xoa gia tri
+      }
       continue;
     }
 
@@ -95,7 +99,7 @@ export function validate<T = Record<string, any>>(body: any, schema: Schema, par
 /** Doc :id tu URL, bao loi 400 neu khong phai so nguyen duong */
 export function parseId(value: unknown, name = 'id'): number {
   const n = Number(value);
-  if (!Number.isInteger(n) || n <= 0) {
+  if (!Number.isInteger(n) || n <= 0 || n > 2147483647) {
     throw AppError.badRequest(`${name} không hợp lệ`, 'INVALID_ID');
   }
   return n;

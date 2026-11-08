@@ -37,7 +37,10 @@ Máy chưa cài SQL Server nên dùng SQL Server 2022 trong Docker (container `p
 |---|---|
 | `run-all.bat` | Bật Docker → bật SQL Server → tạo DB lần đầu → ghi `backend/.env` → `npm install` → chạy backend (cửa sổ "HanoiGo Backend") + frontend ("HanoiGo Frontend") → mở http://localhost:5173 |
 | `reset-db.bat` | Xóa container và tạo lại database + dữ liệu mẫu từ đầu (sau đó tắt/mở lại cửa sổ backend để băm lại mật khẩu seed) |
-| `api-test.bat` | Chạy 42 test API toàn luồng, kết quả ở `api-test.log` |
+| `api-test.bat` | Chạy 78 test API toàn luồng (gồm các trường hợp lỗi / bảo mật), kết quả ở `api-test.log` |
+| `upgrade-db.bat` | Cập nhật database đang chạy lên bản mới nhất (chạy lần lượt `05` → `09`, không xóa dữ liệu, chạy lại nhiều lần vẫn an toàn) |
+| `install-deps.bat` | Cài / cập nhật thư viện cho backend + frontend, xong tự khởi động lại 2 cửa sổ |
+| `restart-app.bat` | Khởi động lại backend + frontend (khi backend bị treo hoặc vừa đổi thư viện) |
 
 Log: `run-all.log`, `backend.log`, `frontend.log`. Tắt project: đóng 2 cửa sổ HanoiGo; SQL Server tắt bằng `docker stop pta-sql`.
 Kết nối SSMS vào DB này: Server `localhost,1433`, SQL Server Authentication, `sa` / `Pta@Strong2026`.
@@ -198,3 +201,20 @@ Chỉ còn 2 phương thức (đã bỏ ví điện tử): `/payment/:orderId` c
 - **Bước bắt buộc**: đăng nhập admin → **Thanh toán** → nhập **ngân hàng, số tài khoản, tên chủ tài khoản** nhận tiền. Chưa nhập thì lựa chọn chuyển khoản bị tắt.
 
 **Database**: bảng `Payments` thêm cột `CardBrand`, `CardLast4`, `TransferContent`, `ExpiresAt`, `CustomerNotifiedAt`, `ConfirmedBy`, `BankReference`, `Note`, `CreatedAt` và trạng thái `EXPIRED` / `CANCELLED`; bảng mới `PaymentSettings`. Database đang chạy: chạy `upgrade-db.bat` (có `08_payment_methods.sql`).
+
+## Kiểm tra tổng thể và các lỗi đã sửa (11/2026)
+
+Đã kiểm tra: type-check TypeScript (backend + frontend), build production, 13 test tìm đường, 78 test API, `npm audit`, toàn vẹn dữ liệu database (28 nhóm truy vấn), giao diện mọi trang người dùng + quản trị ở máy tính và điện thoại.
+
+| Phần | Lỗi | Đã sửa |
+|---|---|---|
+| Backend | `?sort=constructor` / id quá lớn / họ tên rỗng / QR có ký tự lạ → lỗi 500 | Trả 400 hoặc giá trị mặc định |
+| Backend | Tìm đường từ toạ độ ngoài Hà Nội (vd. TP HCM) ra "đi bộ 236 giờ"; giờ khởi hành `25:99` vẫn nhận | Báo `OUT_OF_SERVICE_AREA` / `INVALID_TIME` |
+| Backend | Tạo chuyến có giờ đến trước giờ đi (thành chuyến 23 giờ); 1 xe được gán 2 chuyến cùng giờ | Kiểm tra thời gian (≤ 6 giờ) và trùng lịch xe |
+| Bảo mật | Tài khoản bị khóa / bị hạ quyền vẫn dùng token cũ tới 7 ngày | Mỗi request đối chiếu lại trạng thái trong DB (cache 15 giây) |
+| Bảo mật | Không giới hạn số lần đăng nhập sai / gửi mã xác nhận | Giới hạn theo IP, trả 429 |
+| Bảo mật | Khóa ký JWT là chuỗi cố định công khai trong `run-all.bat` | Mỗi máy tự sinh khóa ngẫu nhiên vào `backend/.jwt-secret` (không đẩy lên GitHub); chạy production với khóa mặc định sẽ bị chặn. Lần chạy `run-all.bat` đầu tiên sau bản này cần đăng nhập lại |
+| Thư viện | `nodemailer` 6 (lỗ hổng mức cao), `react-router-dom` 6 (mức trung bình) | Lên `nodemailer` 10, `react-router-dom` 7 → `npm audit`: 0 lỗ hổng |
+| Database | 7 xe buýt xoay vòng cho 20 tuyến → 1 xe chạy nhiều chuyến **cùng lúc**; 9 cột khóa ngoại chưa có index | `09_data_fixes.sql`: mỗi tuyến có đội xe riêng (đủ xe theo giãn cách và thời gian chuyến), 0 chuyến trùng; thêm index |
+| Frontend | Backend khởi động lại đúng lúc mở trang → bị đăng xuất; vào `/login` khi đã đăng nhập vẫn hiện form | Chỉ đăng xuất khi token thật sự sai (401); đã đăng nhập thì tự chuyển trang |
+| Quản trị | Trang Lịch trình chỉ hiện 500/1184 chuyến | Hiện đủ |

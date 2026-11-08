@@ -22,7 +22,9 @@ export function parseQrPayload(payload: string): { ticketCode: string; signed: b
   const parts = payload.trim().split('|');
   if (parts.length === 3 && parts[0] === PREFIX) {
     const [, code, sig] = parts;
-    const valid = crypto.timingSafeEqual(Buffer.from(sign(code)), Buffer.from(sig.padEnd(8).slice(0, 8)));
+    const expected = Buffer.from(sign(code));
+    const given = Buffer.from(String(sig).toUpperCase());
+    const valid = given.length === expected.length && crypto.timingSafeEqual(expected, given);
     return { ticketCode: code, signed: true, valid };
   }
   return { ticketCode: payload.trim(), signed: false, valid: true };
