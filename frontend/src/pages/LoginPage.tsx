@@ -60,7 +60,10 @@ export default function LoginPage() {
           {busy ? 'Đang đăng nhập...' : 'Đăng nhập'}
         </button>
         <p className="small center">
-          Chưa có tài khoản? <Link to="/register">Đăng ký</Link>
+          Chưa có tài khoản?{' '}
+          <Link to="/register" state={from ? { from } : undefined}>
+            Đăng ký
+          </Link>
         </p>
         <div className="demo-accounts small">
           <div className="muted">Tài khoản demo (mật khẩu 123456):</div>
