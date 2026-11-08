@@ -1,10 +1,9 @@
-/** Service: Don hang + Thanh toan mo phong (Nguoi 2 - Module Ticket/Payment) */
+/** Service: Don hang (Nguoi 2 - Module Ticket/Payment). Thanh toan: xem payment.service.ts */
 import { orderRepository } from '../repositories/order.repository';
 import { ticketRepository } from '../repositories/ticket.repository';
-import { paymentRepository, TicketToIssue } from '../repositories/payment.repository';
+import { paymentRepository } from '../repositories/payment.repository';
 import { AppError } from '../utils/AppError';
 import { AuthUser } from '../types/express';
-import { buildQrPayload, generateTicketCode, generateTransactionCode } from '../utils/qr';
 
 const MAX_QUANTITY_PER_ITEM = 10;
 
@@ -45,6 +44,7 @@ export const orderService = {
   },
 
   async getOrder(orderId: number, user: AuthUser) {
+    await paymentRepository.expireOverdue();
     const order = await orderRepository.getById(orderId);
     if (!order) throw AppError.notFound('Không tìm thấy đơn hàng', 'ORDER_NOT_FOUND');
     if (order.userId !== user.userId && user.role !== 'ADMIN') {
@@ -61,44 +61,7 @@ export const orderService = {
       throw AppError.conflict('Chỉ hủy được đơn hàng đang chờ thanh toán', 'ORDER_NOT_PENDING');
     }
     await orderRepository.updateStatus(orderId, 'CANCELLED');
+    await paymentRepository.cancelPendingForOrder(orderId, 'Khách đã hủy đơn hàng');
     return orderRepository.getById(orderId);
-  },
-
-  /**
-   * POST /payments { orderId, method: 'MOCK', simulate?: 'SUCCESS' | 'FAILED' }
-   *   Payment SUCCESS -> Create Ticket -> Generate QR -> Return Ticket
-   */
-  async pay(user: AuthUser, orderId: number, simulate: 'SUCCESS' | 'FAILED' = 'SUCCESS') {
-    const result = await paymentRepository.processMockPayment({
-      orderId,
-      userId: user.userId,
-      success: simulate === 'SUCCESS',
-      transactionCode: generateTransactionCode(),
-      buildTickets: (details) => {
-        const out: TicketToIssue[] = [];
-        for (const d of details) {
-          for (let i = 0; i < d.quantity; i++) {
-            const ticketCode = generateTicketCode();
-            out.push({
-              ticketTypeId: d.ticketTypeId,
-              ticketCode,
-              qrCode: buildQrPayload(ticketCode),
-              durationMinutes: d.durationMinutes,
-            });
-          }
-        }
-        return out;
-      },
-    });
-
-    const order = await orderRepository.getById(orderId);
-    return {
-      paymentId: result.paymentId,
-      orderId,
-      amount: result.amount,
-      status: result.status,
-      ticketIds: result.ticketIds,
-      order,
-    };
   },
 };

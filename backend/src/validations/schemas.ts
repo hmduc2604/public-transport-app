@@ -46,10 +46,33 @@ export const schemas = {
     items: { type: 'array', required: true, min: 1, label: 'Danh sách vé' },
   } as Schema,
 
-  payment: {
+  cardPayment: {
     orderId: { type: 'number', required: true, integer: true, min: 1, label: 'orderId' },
-    method: { type: 'enum', values: ['MOCK'], label: 'Phương thức' },
-    simulate: { type: 'enum', values: ['SUCCESS', 'FAILED'], label: 'simulate' },
+    cardKind: { type: 'enum', required: true, values: ['INTERNATIONAL', 'DOMESTIC'], label: 'Loại thẻ' },
+    cardNumber: { type: 'string', required: true, max: 30, label: 'Số thẻ' },
+    cardHolder: { type: 'string', required: true, max: 60, label: 'Tên chủ thẻ' },
+    expiry: { type: 'string', required: true, max: 7, label: 'Ngày hết hạn / phát hành' },
+    cvv: { type: 'string', max: 4, label: 'CVV' },
+    bankBin: { type: 'string', max: 10, label: 'Ngân hàng' },
+  } as Schema,
+
+  bankTransfer: {
+    orderId: { type: 'number', required: true, integer: true, min: 1, label: 'orderId' },
+  } as Schema,
+
+  confirmTransfer: {
+    bankReference: { type: 'string', max: 100, label: 'Mã giao dịch ngân hàng' },
+  } as Schema,
+
+  rejectTransfer: {
+    note: { type: 'string', max: 255, label: 'Lý do' },
+  } as Schema,
+
+  paymentSettings: {
+    bankBin: { type: 'string', required: true, max: 10, label: 'Ngân hàng' },
+    accountNo: { type: 'string', required: true, min: 4, max: 30, label: 'Số tài khoản' },
+    accountName: { type: 'string', required: true, min: 2, max: 100, label: 'Tên chủ tài khoản' },
+    transferExpiryMinutes: { type: 'number', integer: true, min: 5, max: 1440, label: 'Thời hạn chuyển khoản (phút)' },
   } as Schema,
 
   tripHistory: {

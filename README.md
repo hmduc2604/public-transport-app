@@ -93,7 +93,7 @@ Vite đã cấu hình proxy `/api → http://localhost:5000`, nên không cần 
 3. Chọn điểm đi (gõ "Hỏa Lò", hoặc "Dùng vị trí hiện tại", hoặc chọn trên bản đồ) → **Tìm đường**.
 4. Hệ thống trả **Top 3** phương án, gắn nhãn Nhanh nhất / Rẻ nhất / Ít đi bộ / Ít chuyển tuyến; đổi tab tiêu chí để so sánh.
 5. Chọn 1 phương án → bản đồ vẽ tuyến (mỗi phương tiện 1 màu, đi bộ nét đứt) + chi tiết từng bước + giờ chuyến kế tiếp.
-6. **Mua vé cho lộ trình** → vé lượt được chọn sẵn → **Thanh toán (mô phỏng)** → **QR e-ticket**.
+6. **Mua vé cho lộ trình** → vé lượt được chọn sẵn → **Thanh toán** bằng thẻ (thẻ thử nghiệm `4242 4242 4242 4242`) hoặc **chuyển khoản QR** → **QR e-ticket**.
 7. Đăng nhập `admin@example.com` → Dashboard thống kê → Vé & Soát vé: dán nội dung QR → vé lượt chuyển **Đã dùng**.
 8. Admin thêm trạm/tuyến mới → graph tìm đường tự xây lại → tìm đường thấy tuyến mới.
 
@@ -179,3 +179,22 @@ Kiểm tra: mở `http://localhost:5000/api/v1/auth/verification-channels` → `
 - Bấm vào một địa điểm (`/attractions/:id`) hoặc mở **Bản đồ & Tìm đường** (`/map`) khi chưa đăng nhập → hiện thông báo kèm nút **Đăng nhập** / **Đăng ký tài khoản mới** (`components/LoginRequired.tsx`).
 - Đăng nhập hoặc đăng ký xong sẽ tự quay lại đúng trang đang định xem; đã đăng nhập thì xem bình thường.
 
+## Thanh toán: thẻ ngân hàng và chuyển khoản QR
+
+Chỉ còn 2 phương thức (đã bỏ ví điện tử): `/payment/:orderId` cho chọn **Thẻ ngân hàng** hoặc **Chuyển khoản QR**.
+
+**Thẻ ngân hàng** (`/payment/:orderId/card`)
+- Thẻ quốc tế (Visa, Mastercard, JCB, AMEX): số thẻ (kiểm tra Luhn, tự nhận hãng thẻ), tên in trên thẻ (chữ in hoa không dấu), ngày hết hạn MM/YY, CVV (AMEX 4 số).
+- Thẻ ATM nội địa (NAPAS): ngân hàng phát hành, số thẻ 16/19 số bắt đầu `9704`, tên chủ thẻ, ngày phát hành MM/YY.
+- Database chỉ lưu **hãng thẻ + 4 số cuối**, không lưu số thẻ đầy đủ hay CVV.
+- Cổng thẻ ở chế độ **thử nghiệm** (chưa nối ngân hàng thật, cần hợp đồng với cổng thanh toán như VNPAY / OnePay / Stripe). Thẻ thử: `4242 4242 4242 4242` thành công, `4000 0000 0000 0002` bị từ chối, `4000 0000 0000 9995` không đủ số dư, `9704 0000 0000 0018` ATM nội địa thành công.
+
+**Chuyển khoản QR** (`/payment/:orderId/transfer`)
+- Tạo mã **VietQR** (chuẩn Napas 247, quét được bằng mọi app ngân hàng) chứa sẵn số tài khoản, **số tiền** và **nội dung riêng cho từng đơn** (vd. `HNG2008ZXAB`). Mã hết hạn sau 30 phút (chỉnh được).
+- Thanh toán **không thành công ngay**: giao dịch ở trạng thái `PENDING`. Khách bấm "Tôi đã chuyển khoản" vẫn chỉ là chờ xác nhận; trang tự kiểm tra trạng thái mỗi 4 giây.
+- Vé chỉ được phát hành khi tiền đã về tài khoản:
+  - **Admin xác nhận**: Quản trị → **Thanh toán** → đối chiếu sao kê → "Xác nhận đã nhận tiền" (hoặc "Từ chối").
+  - **Tự động (tùy chọn)**: webhook [SePay](https://sepay.vn) `POST /api/v1/payments/webhooks/sepay`, khớp nội dung + đủ số tiền. Cần backend có địa chỉ public và thêm `SEPAY_API_KEY=...` vào `backend/.env.local` (SePay gửi header `Authorization: Apikey <key>`).
+- **Bước bắt buộc**: đăng nhập admin → **Thanh toán** → nhập **ngân hàng, số tài khoản, tên chủ tài khoản** nhận tiền. Chưa nhập thì lựa chọn chuyển khoản bị tắt.
+
+**Database**: bảng `Payments` thêm cột `CardBrand`, `CardLast4`, `TransferContent`, `ExpiresAt`, `CustomerNotifiedAt`, `ConfirmedBy`, `BankReference`, `Note`, `CreatedAt` và trạng thái `EXPIRED` / `CANCELLED`; bảng mới `PaymentSettings`. Database đang chạy: chạy `upgrade-db.bat` (có `08_payment_methods.sql`).

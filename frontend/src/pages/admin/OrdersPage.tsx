@@ -128,7 +128,8 @@ export default function OrdersPage() {
           <ul className="plain-list small">
             {detail.payments?.map((p) => (
               <li key={p.paymentId}>
-                #{p.paymentId} · {formatMoney(p.amount)} · <StatusBadge status={p.status} label={STATUS_LABEL[p.status]} /> ·{' '}
+                #{p.paymentId} · {p.paymentMethod === 'BANK_TRANSFER' ? `Chuyển khoản ${p.transferContent ?? ''}` : p.paymentMethod === 'CARD' ? `Thẻ ${p.cardBrand ?? ''} •••• ${p.cardLast4 ?? ''}` : p.paymentMethod} ·{' '}
+                {formatMoney(p.amount)} · <StatusBadge status={p.status} label={STATUS_LABEL[p.status]} /> ·{' '}
                 <span className="mono">{p.transactionCode ?? '—'}</span> · {formatDateTime(p.paidAt)}
               </li>
             ))}

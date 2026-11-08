@@ -1,8 +1,14 @@
 import { api } from './api';
-import { PaymentResult } from '../types';
+import { CardPaymentInput, CardPaymentResult, PaymentMethods, PaymentView } from '../types';
 
 export const paymentApi = {
-  /** Thanh toan mo phong. simulate = 'FAILED' de demo truong hop that bai */
-  pay: (orderId: number, simulate: 'SUCCESS' | 'FAILED' = 'SUCCESS') =>
-    api.post<PaymentResult>('/payments', { orderId, method: 'MOCK', simulate }),
+  /** Phuong thuc dang mo + danh sach ngan hang */
+  methods: () => api.get<PaymentMethods>('/payments/methods'),
+  /** Thanh toan the (cong thanh toan mo phong): SUCCESS -> ve phat hanh ngay; FAILED -> thu lai */
+  payByCard: (input: CardPaymentInput) => api.post<CardPaymentResult>('/payments/card', input),
+  /** Tao (hoac lay lai) ma QR chuyen khoan cho don - trang thai PENDING */
+  createTransfer: (orderId: number) => api.post<PaymentView>('/payments/bank-transfer', { orderId }),
+  get: (paymentId: number) => api.get<PaymentView>(`/payments/${paymentId}`),
+  /** Khach bao "Toi da chuyen khoan" - VAN cho xac nhan tien ve */
+  notifyTransferred: (paymentId: number) => api.post<PaymentView>(`/payments/${paymentId}/transferred`),
 };

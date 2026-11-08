@@ -21,9 +21,11 @@ import { ticketRepository } from '../repositories/ticket.repository';
 import { fareRuleRepository } from '../repositories/fareRule.repository';
 import { attractionRepository } from '../repositories/attraction.repository';
 import { orderRepository } from '../repositories/order.repository';
+import { paymentRepository } from '../repositories/payment.repository';
 import { statisticsRepository } from '../repositories/statistics.repository';
 import { routingService } from './routing.service';
 import { ticketService } from './ticket.service';
+import { paymentService } from './payment.service';
 import { AppError } from '../utils/AppError';
 import { paginated } from '../utils/apiResponse';
 import { AuthUser } from '../types/express';
@@ -319,6 +321,7 @@ export const adminService = {
     const order = await this.getOrder(id);
     if (order.status !== 'PENDING') throw AppError.conflict('Chỉ hủy được đơn PENDING', 'ORDER_NOT_PENDING');
     await orderRepository.updateStatus(id, 'CANCELLED');
+    await paymentRepository.cancelPendingForOrder(id, 'Quản trị viên đã hủy đơn hàng');
     return this.getOrder(id);
   },
 
@@ -335,10 +338,15 @@ export const adminService = {
 
   verifyTicket: (qrData: string, markUsed: boolean) => ticketService.verify(qrData, markUsed),
 
-  async listPayments(q: Page & { status?: string }) {
-    const r = await orderRepository.listPayments(q);
+  async listPayments(q: Page & { status?: string; method?: string; search?: string }) {
+    const r = await paymentService.listAll(q);
     return paginated(r.items, r.total, q.page, q.pageSize);
   },
+  confirmTransfer: (admin: AuthUser, id: number, bankReference?: string | null) => paymentService.confirmTransfer(admin, id, bankReference),
+  rejectTransfer: (admin: AuthUser, id: number, note?: string | null) => paymentService.rejectTransfer(admin, id, note),
+  paymentSettings: async () => ({ ...(await paymentService.getSettings()), banks: (await paymentService.methods()).banks }),
+  updatePaymentSettings: (input: any) => paymentService.updateSettings(input),
+  clearPaymentSettings: () => paymentService.clearSettings(),
 
   /* ======================= STATISTICS / SYSTEM ======================= */
   statistics: (days: number) => statisticsRepository.overview(days),

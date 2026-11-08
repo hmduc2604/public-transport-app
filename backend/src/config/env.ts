@@ -71,6 +71,14 @@ export const env = {
     from: process.env.MAIL_FROM || process.env.SMTP_USER || '',
   },
 
+  /**
+   * Thanh toan chuyen khoan QR: webhook SePay (https://sepay.vn) tu dong xac nhan khi tien ve tai khoan.
+   * De trong -> admin xac nhan thu cong tai Quan tri > Thanh toan.
+   */
+  payment: {
+    sepayApiKey: process.env.SEPAY_API_KEY || '',
+  },
+
   /** Gui SMS: twilio | esms | speedsms | console (chi de thu) */
   sms: {
     provider: (process.env.SMS_PROVIDER || '').toLowerCase(),

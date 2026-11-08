@@ -20,6 +20,7 @@ const GROUPS = [
       { to: '/admin/ticket-types', label: '🎫 Loại vé' },
       { to: '/admin/fares', label: '💵 Bảng giá' },
       { to: '/admin/orders', label: '🧾 Đơn hàng' },
+      { to: '/admin/payments', label: '🏦 Thanh toán' },
       { to: '/admin/tickets', label: '🔍 Vé & Soát vé' },
     ],
   },

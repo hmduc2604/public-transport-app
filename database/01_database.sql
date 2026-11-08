@@ -1,7 +1,7 @@
 /* =====================================================================
    PUBLIC TRANSPORT MULTI-MODAL - DATABASE SCHEMA (SQL Server)
    File   : 01_database.sql
-   Muc dich: Tao database PublicTransportDBV2 + 19 bang + PK/FK/CHECK/INDEX
+   Muc dich: Tao database PublicTransportDBV2 + 20 bang + PK/FK/CHECK/INDEX
    Chay   : Mo SSMS -> New Query -> F5 (chay ca file)
    Luu y  : Script se XOA database cu (neu co) de tao lai tu dau.
             Neu khong muon mat du lieu, dung 04_upgrade_existing_db.sql
@@ -332,13 +332,41 @@ CREATE TABLE Payments (
     PaymentId       INT IDENTITY(1,1) PRIMARY KEY,
     OrderId         INT           NOT NULL,
     Amount          DECIMAL(12,2) NOT NULL,
-    PaymentMethod   VARCHAR(30)   NOT NULL,
+    PaymentMethod   VARCHAR(30)   NOT NULL,          -- CARD | BANK_TRANSFER (MOCK: du lieu cu)
     Status          VARCHAR(20)   NOT NULL DEFAULT 'PENDING',
     TransactionCode VARCHAR(100),
     PaidAt          DATETIME2 NULL,
+    -- The: chi luu hang the + 4 so cuoi (KHONG luu so the day du / CVV)
+    CardBrand       VARCHAR(20)   NULL,
+    CardLast4       CHAR(4)       NULL,
+    -- Chuyen khoan QR: noi dung CK duy nhat, han thanh toan, xac nhan
+    TransferContent    VARCHAR(50)   NULL,
+    ExpiresAt          DATETIME2     NULL,
+    CustomerNotifiedAt DATETIME2     NULL,     -- khach bam "Toi da chuyen khoan"
+    ConfirmedBy        NVARCHAR(100) NULL,     -- 'ADMIN #4' | 'SEPAY'
+    BankReference      VARCHAR(100)  NULL,     -- ma giao dich ngan hang
+    Note               NVARCHAR(255) NULL,
+    CreatedAt          DATETIME2     NOT NULL DEFAULT SYSDATETIME(),
     CONSTRAINT FK_Payments_Orders FOREIGN KEY (OrderId) REFERENCES Orders(OrderId),
-    CONSTRAINT CK_Payments_Method CHECK (PaymentMethod IN ('MOCK')),
-    CONSTRAINT CK_Payments_Status CHECK (Status IN ('PENDING', 'SUCCESS', 'FAILED'))
+    CONSTRAINT CK_Payments_Method CHECK (PaymentMethod IN ('CARD', 'BANK_TRANSFER', 'MOCK')),
+    CONSTRAINT CK_Payments_Status CHECK (Status IN ('PENDING', 'SUCCESS', 'FAILED', 'EXPIRED', 'CANCELLED'))
+);
+CREATE UNIQUE INDEX UX_Payments_TransferContent ON Payments(TransferContent) WHERE TransferContent IS NOT NULL;
+GO
+
+/* ---------------------------------------------------------------------
+   15b. PaymentSettings  (1 dong: tai khoan ngan hang NHAN tien chuyen khoan QR)
+        Admin cap nhat tai trang Quan tri > Thanh toan
+   --------------------------------------------------------------------- */
+CREATE TABLE PaymentSettings (
+    SettingId             INT           NOT NULL PRIMARY KEY DEFAULT 1,
+    BankBin               VARCHAR(10)   NULL,
+    BankName              NVARCHAR(100) NULL,
+    AccountNo             VARCHAR(30)   NULL,
+    AccountName           NVARCHAR(100) NULL,
+    TransferExpiryMinutes INT           NOT NULL DEFAULT 30,
+    UpdatedAt             DATETIME2     NULL,
+    CONSTRAINT CK_PaymentSettings_Single CHECK (SettingId = 1)
 );
 GO
 
@@ -395,7 +423,7 @@ CREATE INDEX IX_Tickets_Order                ON Tickets(OrderId);
 CREATE INDEX IX_TripHistories_User           ON TripHistories(UserId, StartedAt DESC);
 GO
 
-/* Kiem tra: phai co 19 bang */
+/* Kiem tra: phai co 20 bang */
 SELECT TABLE_NAME
 FROM INFORMATION_SCHEMA.TABLES
 WHERE TABLE_TYPE = 'BASE TABLE'

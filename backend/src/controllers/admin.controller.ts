@@ -187,8 +187,23 @@ export const adminController = {
       await adminService.listPayments({
         ...parsePagination(req.query),
         status: optionalString(req.query.status)?.toUpperCase(),
+        method: optionalString(req.query.method)?.toUpperCase(),
+        search: optionalString(req.query.search),
       }),
     ),
+  confirmTransfer: async (req: Request, res: Response) =>
+    ok(
+      res,
+      await adminService.confirmTransfer(req.user!, id(req), body(req, schemas.confirmTransfer).bankReference),
+      'Đã xác nhận nhận tiền - vé đã được phát hành',
+    ),
+  rejectTransfer: async (req: Request, res: Response) =>
+    ok(res, await adminService.rejectTransfer(req.user!, id(req), body(req, schemas.rejectTransfer).note), 'Đã từ chối giao dịch'),
+  paymentSettings: async (_req: Request, res: Response) => ok(res, await adminService.paymentSettings()),
+  updatePaymentSettings: async (req: Request, res: Response) =>
+    ok(res, await adminService.updatePaymentSettings(body(req, schemas.paymentSettings)), 'Đã lưu tài khoản nhận tiền'),
+  clearPaymentSettings: async (_req: Request, res: Response) =>
+    ok(res, await adminService.clearPaymentSettings(), 'Đã tắt thanh toán chuyển khoản'),
 
   /* ---------- Statistics / System ---------- */
   statistics: async (req: Request, res: Response) =>

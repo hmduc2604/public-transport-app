@@ -128,7 +128,12 @@ Response `data`:
 | GET 🔒 | `/orders/me` | | kèm `itemsSummary` |
 | GET 🔒 | `/orders/:id` | | kèm `items[]`, `payments[]`, `tickets[]` |
 | POST 🔒 | `/orders/:id/cancel` | | chỉ đơn PENDING |
-| POST 🔒 | `/payments` | `{ orderId, method: "MOCK", simulate?: "SUCCESS"|"FAILED" }` | SUCCESS → Order PAID + sinh vé + QR (1 transaction) |
+| GET | `/payments/methods` | | `{ card, bankTransfer: { enabled, bankName, expiryMinutes, autoConfirm }, banks[] }` |
+| POST 🔒 | `/payments/card` | `{ orderId, cardKind: "INTERNATIONAL"|"DOMESTIC", cardNumber, cardHolder, expiry: "MM/YY", cvv? (quốc tế), bankBin? (nội địa) }` | 201 SUCCESS → Order PAID + sinh vé (1 transaction) · 200 FAILED (thẻ bị từ chối) · 400 `CARD_INVALID` + `details` theo từng trường |
+| POST 🔒 | `/payments/bank-transfer` | `{ orderId }` | Tạo / dùng lại giao dịch **PENDING**: `qrImage`, `qrPayload` (VietQR), `bank`, `amount`, `transferContent`, `expiresAt`, `secondsLeft`. 503 `TRANSFER_NOT_CONFIGURED` nếu admin chưa nhập tài khoản |
+| GET 🔒 | `/payments/:id` | | Trạng thái giao dịch (frontend hỏi định kỳ); SUCCESS kèm `ticketIds` |
+| POST 🔒 | `/payments/:id/transferred` | | Khách báo đã chuyển → vẫn PENDING (ghi `customerNotifiedAt`) |
+| POST | `/payments/webhooks/sepay` | JSON của SePay, header `Authorization: Apikey <SEPAY_API_KEY>` | Tiền vào đúng nội dung + đủ tiền → SUCCESS + sinh vé. Luôn trả `{ success: true }` |
 | GET 🔒 | `/tickets/me` | `status?` (alias `/tickets/my`) | Tự chuyển vé quá hạn → EXPIRED |
 | GET 🔒 | `/tickets/:id` | | `qrPayload`, `isValidNow`, `remainingMinutes` |
 | GET 🔒 | `/tickets/:id/qr` | | `{ payload, image: "data:image/png;base64,..." }` |
@@ -137,7 +142,8 @@ Response `data`:
 | PATCH 🔒 | `/trip-histories/:id/complete` | | |
 | DELETE 🔒 | `/trip-histories/:id` | | |
 
-Payment response: `{ paymentId, orderId, amount, status: "SUCCESS"|"FAILED", ticketIds: [..], order }`
+Thanh toán thẻ trả: `{ paymentId, orderId, amount, status: "SUCCESS"|"FAILED", message, cardBrand, cardLast4, ticketIds, order }`.
+Trạng thái giao dịch: `PENDING` → `SUCCESS` | `FAILED` (bị từ chối) | `EXPIRED` (quá hạn, chưa báo chuyển) | `CANCELLED` (hủy đơn / đã trả bằng cách khác).
 
 ## 6. Admin 👑 (Người 3) – `/admin/*`
 
@@ -170,7 +176,10 @@ Bổ sung:
 | GET | `/admin/tickets` | `search`, `status`, `type`, `page`, `pageSize` |
 | PATCH | `/admin/tickets/:id/status` | `{ status }` |
 | POST | `/admin/tickets/verify` | `{ qrData, markUsed? }` → `{ valid, reason, ticket }` (vé lượt hợp lệ → USED) |
-| GET | `/admin/payments` | `status`, `page`, `pageSize` |
+| GET | `/admin/payments` | `method` (CARD/BANK_TRANSFER), `status`, `search` (mã đơn, nội dung CK, email), `page`, `pageSize` |
+| POST | `/admin/payments/:id/confirm` | `{ bankReference? }` → xác nhận đã nhận tiền chuyển khoản, phát hành vé |
+| POST | `/admin/payments/:id/reject` | `{ note? }` → FAILED |
+| GET / PUT / DELETE | `/admin/payment-settings` | PUT `{ bankBin, accountNo, accountName, transferExpiryMinutes? }` – tài khoản nhận chuyển khoản; DELETE = tắt chuyển khoản |
 | GET | `/admin/statistics` | `days` (mặc định 30) → `overview`, `revenueByDay`, `ticketsByType`, `ticketsByStatus`, `transportSummary`, `topDestinations`, `recentOrders` |
 | POST | `/admin/routing/rebuild` | Xây lại graph tìm đường ngay |
 

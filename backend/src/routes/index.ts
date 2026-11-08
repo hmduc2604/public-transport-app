@@ -5,6 +5,7 @@ import transportRoutes from './transport.routes';
 import attractionRoutes from './attraction.routes';
 import routingRoutes from './routing.routes';
 import ticketRoutes from './ticket.routes';
+import paymentRoutes from './payment.routes';
 import adminRoutes from './admin.routes';
 
 const api = Router();
@@ -18,6 +19,7 @@ api.use(transportRoutes);
 api.use(attractionRoutes);
 api.use(routingRoutes);
 api.use(ticketRoutes);
+api.use(paymentRoutes);
 api.use('/admin', adminRoutes);
 
 export default api;
