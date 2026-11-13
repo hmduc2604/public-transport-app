@@ -155,7 +155,7 @@ UPDATE TouristAttractions SET
 WHERE Name = N'Văn Miếu - Quốc Tử Giám';
 UPDATE TouristAttractions SET
   Description = N'Bảo tàng lưu giữ hàng nghìn tác phẩm tiêu biểu của mỹ thuật Việt Nam từ thời tiền sử đến hiện đại: điêu khắc, tranh sơn mài, tranh lụa, gốm và tranh dân gian.',
-  History = N'Tòa nhà được xây năm 1937 thời Pháp thuộc, vốn là ký túc xá dành cho nữ sinh, mang phong cách kiến trúc Đông Dương với mái ngói nhiều tầng. Bảo tàng chính thức mở cửa năm 1966. Trong bộ sưu tập có tượng Phật Bà Quan Âm nghìn mắt nghìn tay (1656) và nhiều tác phẩm của các danh họa như Tô Ngọc Vân, Nguyễn Gia Trí, Bùi Xuân Phái.',
+  History = N'Tòa nhà được xây năm 1937 thời Pháp thuộc, vốn là ký túc xá dành cho nữ sinh, mang phong cách kiến trúc Đông Dương với mái ngói nhiều tầng. Bảo tàng Mỹ thuật Việt Nam được thành lập ngày 24/6/1966, hiện lưu giữ hơn 20.000 hiện vật. Trong bộ sưu tập có tượng Phật Bà Quan Âm nghìn mắt nghìn tay (1656) và nhiều tác phẩm của các danh họa như Tô Ngọc Vân, Nguyễn Gia Trí, Bùi Xuân Phái.',
   Highlights = N'Tượng Phật Bà Quan Âm nghìn mắt nghìn tay (1656)|Tranh sơn mài, tranh lụa của các danh họa|Điêu khắc Chăm và tượng gỗ đình làng|Tranh dân gian Đông Hồ, Hàng Trống|Không gian sáng tạo cho trẻ em ở tầng 3',
   OpeningHours = N'8:30 – 17:00 hằng ngày.',
   TicketPrice = N'Người lớn: 40.000đ. Sinh viên: 20.000đ. Học sinh 6 – 16 tuổi: 10.000đ. Trẻ em dưới 6 tuổi: miễn phí. Thuyết minh tự động: 50.000đ (sinh viên 30.000đ), có nhiều ngôn ngữ.',
@@ -188,7 +188,7 @@ UPDATE TouristAttractions SET
 WHERE Name = N'Bảo tàng Dân tộc học Việt Nam';
 UPDATE TouristAttractions SET
   Description = N'Hồ nước tự nhiên lớn nhất nội thành Hà Nội, rộng khoảng 500 ha với chu vi khoảng 17 km, nổi tiếng với cảnh hoàng hôn và nhiều di tích quanh hồ.',
-  History = N'Hồ Tây từng có các tên Đầm Xác Cáo, hồ Kim Ngưu, Lãng Bạc, Dâm Đàm; tên Tây Hồ có từ thời Lê. Quanh hồ có nhiều di tích nổi tiếng như chùa Trấn Quốc, Phủ Tây Hồ, đền Quán Thánh. Ven hồ là các làng cổ như Nghi Tàm, Quảng An, Nhật Tân với nghề trồng hoa, trồng đào.',
+  History = N'Hồ Tây từng có các tên Đầm Xác Cáo, hồ Kim Ngưu, Lãng Bạc, Dâm Đàm; năm 1573 hồ được đổi tên thành Tây Hồ để kiêng húy vua Lê Thế Tông. Quanh hồ có nhiều di tích nổi tiếng như chùa Trấn Quốc, Phủ Tây Hồ, đền Quán Thánh. Ven hồ là các làng cổ như Nghi Tàm, Quảng An, Nhật Tân với nghề trồng hoa, trồng đào.',
   Highlights = N'Ngắm hoàng hôn trên đường Thanh Niên|Chùa Trấn Quốc, Phủ Tây Hồ ven hồ|Đạp xe vòng quanh hồ|Ẩm thực: bánh tôm Hồ Tây, ốc nóng|Cà phê ven hồ và phố Trịnh Công Sơn',
   OpeningHours = N'Khu vực công cộng, mở cửa cả ngày.',
   TicketPrice = N'Miễn phí.',
@@ -210,7 +210,7 @@ UPDATE TouristAttractions SET
 WHERE Name = N'Chùa Trấn Quốc';
 UPDATE TouristAttractions SET
   Description = N'Con phố nhỏ trong phố cổ được mệnh danh là "phố Tây", sôi động về đêm với hàng quán bia, đồ nướng và khách du lịch từ khắp nơi.',
-  History = N'Phố mang tên Tạ Hiện, một tướng lĩnh chống Pháp cuối thế kỷ XIX. Trước đây phố có tên Hàng Guột. Từ những năm 2000, ngã tư Tạ Hiện – Lương Ngọc Quyến trở thành điểm hẹn "bia hơi" nổi tiếng, được gọi là "ngã tư quốc tế".',
+  History = N'Thời Pháp thuộc, các đoạn phố cũ được gộp lại và mang tên Rue Géraud. Từ năm 1945, phố được đổi tên theo Tạ Hiện (1841 – 1887), một tướng lĩnh của phong trào Cần Vương chống Pháp. Người dân còn quen gọi là ngõ Quảng Lạc, theo tên rạp hát Quảng Lạc giữa phố. Ngày nay ngã tư Tạ Hiện – Lương Ngọc Quyến là điểm hẹn "bia hơi" nổi tiếng, được gọi là "ngã tư quốc tế"; từ năm 2014 phố nằm trong khu phố đi bộ cuối tuần.',
   Highlights = N'Ngã tư Tạ Hiện – Lương Ngọc Quyến náo nhiệt về đêm|Bia hơi, đồ nướng, ăn vặt đường phố|Không khí giao lưu với du khách quốc tế|Nằm trong khu phố đi bộ cuối tuần',
   OpeningHours = N'Sôi động nhất từ khoảng 18:00 đến khuya, đặc biệt tối thứ Sáu – Chủ nhật.',
   TicketPrice = N'Đi dạo miễn phí; chi phí ăn uống tùy quán.',

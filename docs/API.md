@@ -22,7 +22,7 @@ Lỗi validate có thêm `details`: `{ "email": "Email không hợp lệ" }`.
 | 404 | `*_NOT_FOUND`, `NO_ROUTE_FOUND`, `API_NOT_FOUND` |
 | 409 | `EMAIL_EXISTS`, `DUPLICATE_VALUE`, `CONSTRAINT_VIOLATION`, `ORDER_ALREADY_PAID`, `VEHICLE_SCHEDULE_CONFLICT` (xe đã có chuyến trùng giờ) |
 | 429 | `TOO_MANY_LOGIN_ATTEMPTS` (sai mật khẩu 10 lần / 15 phút / IP), `TOO_MANY_CODE_REQUESTS` (gửi mã quá 10 lần / giờ / IP); header `Retry-After` |
-| 500 / 503 | `INTERNAL_ERROR` / `DB_UNAVAILABLE` |
+| 500 / 503 | `INTERNAL_ERROR` / `DB_UNAVAILABLE` (mất kết nối database; backend tự kết nối lại khi database chạy lại) |
 
 ---
 
@@ -65,6 +65,17 @@ Lỗi validate có thêm `details`: `{ "email": "Email không hợp lệ" }`.
 | GET | `/attractions/nearby` | `lat`, `lng`, `radius`, `limit` |
 | GET | `/attractions/:id` | kèm `nearbyStations[]`; `highlights` là mảng |
 | GET | `/attractions/:id/nearby-stations` | |
+
+`GET /attractions/:id` trả thêm cho trang chi tiết:
+
+| Trường | Kiểu | Ý nghĩa |
+|---|---|---|
+| `highlights`, `tips` | `string[]` | Điểm nổi bật, kinh nghiệm tham quan |
+| `facts` | `{ label, value }[]` | Thông tin nhanh (năm xây dựng, xếp hạng...) – cột `Facts`, mỗi dòng `nhãn \| giá trị` |
+| `timeline` | `{ year, event }[]` | Mốc lịch sử theo thứ tự – cột `Timeline`, mỗi dòng `năm \| sự kiện`; chưa có thì `[]` |
+| `nearbyStations[].routes` | `{ routeId, routeCode, routeName }[]` | Các tuyến đang chạy dừng tại trạm (trạm xe đạp / xe điện: `[]`) |
+| `nearbyAttractions` | `{ attractionId, name, category, imageUrl, hoursSummary, priceFrom, imageCount, distanceMeters, walkingMinutes }[]` | Tối đa 4 địa điểm khác trong bán kính 3 km, gần nhất trước |
+| `images` | `{ imageUrl, caption, credit, sourceUrl }[]` | Bộ sưu tập ảnh (kèm tác giả / giấy phép) |
 
 ## 4. Routing – API quan trọng nhất
 
@@ -169,7 +180,7 @@ Bổ sung:
 | PUT | `/admin/routes/:id/stations` | `{ stations: [{ stationId, distanceFromStart? }] }` (≥ 2 trạm, theo thứ tự) |
 | POST | `/admin/routes` | có thể kèm `stations: [...]` |
 | POST | `/admin/trips` | `{ routeId, vehicleId, tripCode, departureTime:"HH:mm", arrivalTime:"HH:mm" }` → tự sinh StopTimes |
-| POST/PUT | `/admin/attractions` | có thể kèm `stations: [{ stationId, walkingDistance, walkingDuration }]`; `highlights` cách nhau bởi `|` |
+| POST/PUT | `/admin/attractions` | có thể kèm `stations: [{ stationId, walkingDistance, walkingDuration }]`; `highlights` cách nhau bởi `\|`; `facts` (≤ 4000 ký tự) / `timeline` (≤ 8000): mỗi dòng `nhãn \| giá trị`, gửi `null` để xóa |
 | GET | `/admin/users` | `search`, `role`, `status`, `page`, `pageSize` → phân trang |
 | GET / PUT | `/admin/users/:id` | `{ fullName?, phone?, role?, status: "ACTIVE"|"LOCKED" }` (không tự khóa/hạ quyền chính mình) |
 | GET | `/admin/orders` | `search`, `status`, `page`, `pageSize` |

@@ -216,6 +216,8 @@ CREATE TABLE TouristAttractions (
     VisitDuration   NVARCHAR(100)  NULL,      -- thoi gian tham quan goi y
     BestTime        NVARCHAR(300)  NULL,      -- thoi diem dep nhat
     Tips            NVARCHAR(MAX)  NULL,      -- luu y, cac y cach nhau boi dau '|'
+    Facts           NVARCHAR(MAX)  NULL,      -- du kien nhanh, moi dong 'nhan | gia tri'
+    Timeline        NVARCHAR(MAX)  NULL,      -- moc lich su, moi dong 'nam | su kien'
     PopularityScore INT            NOT NULL CONSTRAINT DF_TouristAttractions_Popularity DEFAULT 50,
     Status          VARCHAR(20)    NOT NULL DEFAULT 'ACTIVE',
     CreatedAt       DATETIME2      NOT NULL DEFAULT SYSDATETIME(),

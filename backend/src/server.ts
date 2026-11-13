@@ -26,6 +26,8 @@ async function main() {
   };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
+  // Promise bi tu choi ma khong ai bat (vd. gui email nen that bai) -> ghi log, khong lam sap server
+  process.on('unhandledRejection', (reason) => console.error('[UNHANDLED REJECTION]', reason));
 }
 
 main();

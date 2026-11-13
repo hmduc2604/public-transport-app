@@ -172,6 +172,8 @@ export const schemas = {
     visitDuration: { type: 'string', max: 100, label: 'Thời gian tham quan' },
     bestTime: { type: 'string', max: 300, label: 'Thời điểm đẹp nhất' },
     tips: { type: 'string', label: 'Lưu ý' },
+    facts: { type: 'string', max: 4000, label: 'Thông tin nhanh' },
+    timeline: { type: 'string', max: 8000, label: 'Mốc lịch sử' },
     imagesText: { type: 'string', label: 'Bộ sưu tập ảnh' },
     popularityScore: { type: 'number', integer: true, min: 0, max: 100, label: 'Điểm nổi bật' },
     status: { type: 'enum', values: STATUS_ACTIVE, label: 'Trạng thái' },

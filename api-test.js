@@ -32,6 +32,21 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
   r = await call('GET', '/routes/1/trips?upcoming=true'); check('route trips', r.status === 200, `trips=${r.j?.data?.length}`);
   r = await call('GET', '/attractions?category=' + encodeURIComponent('Bảo tàng')); check('attractions filter', r.j?.data?.length === 3, r.j?.data?.length);
   r = await call('GET', '/attractions/11'); check('attraction detail', r.status === 200 && Array.isArray(r.j.data.highlights), r.j?.data?.name);
+  { // Trang chi tiet: thong tin nhanh, moc lich su, tuyen dung tai tram gan, dia diem lan can
+    const d = r.j?.data;
+    check('chi tiet: thong tin nhanh + moc lich su', d?.facts?.length >= 3 && d.facts.every((f) => f.label && f.value) && d?.timeline?.length >= 2 && d.timeline.every((t) => t.year && t.event), `facts=${d?.facts?.length} timeline=${d?.timeline?.length}`);
+    const na = d?.nearbyAttractions ?? [];
+    check('chi tiet: toi da 4 dia diem lan can trong 3 km, gan nhat truoc', na.length > 0 && na.length <= 4 && na.every((n, i) => n.attractionId !== 11 && n.distanceMeters <= 3000 && n.walkingMinutes >= 1 && (i === 0 || na[i - 1].distanceMeters <= n.distanceMeters)), na.map((n) => `${n.name} ${n.distanceMeters}m`).join(', '));
+    check('chi tiet: tram gan kem cac tuyen dung tai tram', d?.nearbyStations?.length > 0 && d.nearbyStations.every((s) => Array.isArray(s.routes)) && d.nearbyStations.some((s) => s.routes.length > 0), d?.nearbyStations?.map((s) => `${s.stationName}[${s.routes.map((x) => x.routeCode).join(' ')}]`).join(', '));
+    // Du lieu day du: ca 20 dia diem deu co >= 4 thong tin nhanh va >= 2 moc lich su
+    r = await call('GET', '/attractions');
+    const thin = [];
+    for (const it of r.j?.data ?? []) {
+      const x = (await call('GET', `/attractions/${it.attractionId}`)).j?.data;
+      if (!(x?.facts?.length >= 4 && x?.timeline?.length >= 2 && x?.images?.length >= 5)) thin.push(`${it.name} f=${x?.facts?.length} t=${x?.timeline?.length} i=${x?.images?.length}`);
+    }
+    check('20 dia diem: du thong tin nhanh, moc lich su, 5 anh', (r.j?.data?.length ?? 0) === 20 && thin.length === 0, thin.join('; ') || `${r.j?.data?.length} dia diem`);
+  }
   r = await call('GET', '/attractions/recommend?categories=' + encodeURIComponent('Di tích') + '&lat=21.0285&lng=105.8542'); check('recommend', r.status === 200, r.j?.data?.[0]?.name);
   for (const pref of ['FASTEST', 'CHEAPEST', 'LEAST_WALKING', 'FEWEST_TRANSFERS']) {
     r = await call('POST', '/routing/search', { origin: { attractionId: 6 }, destination: { attractionId: 16 }, preference: pref, departureTime: '08:00' }, tok);
@@ -102,6 +117,14 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
   r = await call('DELETE', `/admin/trips/${r.j?.data?.tripId}`, null, at); check('admin delete trip', r.status === 200);
   r = await call('DELETE', `/admin/routes/${rid}`, null, at); check('admin soft delete route', r.status === 200);
   r = await call('DELETE', `/admin/stations/${sid}`, null, at); check('admin soft delete station', r.status === 200);
+  r = await call('GET', '/admin/attractions/18', null, at); const tl0 = r.j?.data?.timeline ?? null;
+  const tlCount0 = String(tl0 ?? '').split('\n').filter((l) => l.includes('|')).length;
+  r = await call('PUT', '/admin/attractions/18', { timeline: '2017 | Phố sách khai trương\n2024 | Mốc thử nghiệm ' + SUF }, at);
+  r = await call('GET', '/attractions/18'); check('admin sua moc lich su -> trang chi tiet cap nhat', r.j?.data?.timeline?.length === 2 && r.j.data.timeline[0].year === '2017', JSON.stringify(r.j?.data?.timeline?.[1]));
+  r = await call('PUT', '/admin/attractions/18', { facts: 'Nhãn | ' + 'x'.repeat(4000) }, at); check('thong tin nhanh qua 4000 ky tu -> 400', r.status === 400 && r.j.errorCode === 'VALIDATION_ERROR', r.j?.errorCode);
+  r = await call('PUT', '/admin/attractions/18', { timeline: null }, at); r = await call('GET', '/attractions/18');
+  check('xoa moc lich su -> mang rong, trang van hien', r.status === 200 && Array.isArray(r.j.data.timeline) && r.j.data.timeline.length === 0 && r.j.data.facts.length >= 4, r.j?.data?.name);
+  r = await call('PUT', '/admin/attractions/18', { timeline: tl0 }, at); r = await call('GET', '/attractions/18'); check('tra lai moc lich su cu', r.status === 200 && tlCount0 >= 2 && r.j.data.timeline.length === tlCount0, `${r.j?.data?.timeline?.length}/${tlCount0}`);
   r = await call('GET', '/admin/trips?routeId=1', null, at); const busyTrip = r.j?.data?.[0];
   r = await call('DELETE', `/admin/vehicles/${busyTrip?.vehicleId}`, null, at); check('xoa xe dang co chuyen -> 409', r.status === 409, r.j?.errorCode);
   r = await call('POST', '/admin/trips', { routeId: 1, vehicleId: busyTrip?.vehicleId, tripCode: 'BUSTEST' + SUF + '-X', departureTime: busyTrip?.departureTime, arrivalTime: busyTrip?.arrivalTime }, at);
