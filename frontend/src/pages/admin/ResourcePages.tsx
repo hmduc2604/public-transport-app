@@ -299,6 +299,16 @@ export function FareRulesPage() {
 }
 
 /* ===================== DIEM THAM QUAN ===================== */
+/** "Nhan | Gia tri" moi dong: bo dong trong, chuan hoa khoang trang quanh dau | */
+const cleanPairLines = (v: unknown) =>
+  typeof v === 'string'
+    ? v
+        .split(/\r?\n/)
+        .map((line) => line.split('|').map((s) => s.trim()).join(' | '))
+        .filter((line) => line.replace(/[|\s]/g, '') !== '')
+        .join('\n')
+    : v;
+
 export function AttractionsAdminPage() {
   return (
     <CrudPage
@@ -321,6 +331,8 @@ export function AttractionsAdminPage() {
         { name: 'description', label: 'Giới thiệu', type: 'textarea' },
         { name: 'history', label: 'Lịch sử', type: 'textarea' },
         { name: 'highlights', label: 'Điểm nổi bật (cách nhau bởi dấu |)', type: 'textarea' },
+        { name: 'facts', label: 'Thông tin nhanh — mỗi dòng: Nhãn | Giá trị (vd: Khởi dựng | Năm 1070)', type: 'textarea' },
+        { name: 'timeline', label: 'Mốc lịch sử — mỗi dòng: Năm | Sự kiện', type: 'textarea' },
         { name: 'openingHours', label: 'Giờ mở cửa (chi tiết)', type: 'textarea' },
         { name: 'hoursSummary', label: 'Giờ mở cửa (rút gọn, hiện trên thẻ)' },
         { name: 'ticketPrice', label: 'Giá vé (chi tiết)', type: 'textarea' },
@@ -343,6 +355,8 @@ export function AttractionsAdminPage() {
         ...data,
         highlights: typeof data.highlights === 'string' ? data.highlights.split('|').map((s: string) => s.trim()).filter(Boolean).join('|') : data.highlights,
         tips: typeof data.tips === 'string' ? data.tips.split('|').map((s: string) => s.trim()).filter(Boolean).join('|') : data.tips,
+        facts: cleanPairLines(data.facts),
+        timeline: cleanPairLines(data.timeline),
       })}
       deleteLabel="Ẩn"
     />

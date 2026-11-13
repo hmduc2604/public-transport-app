@@ -4,13 +4,13 @@ import { formatDistance } from '../utils/format';
 
 const CATEGORY_ICON: Record<string, string> = {
   'Danh thắng': '🏞️',
-  'Di tích': '🏯',
-  'Di sản': '🏛️',
-  'Bảo tàng': '🖼️',
-  'Tôn giáo': '🛕',
+  'Di tích': '🏛️',
+  'Di sản': '🏯', // hoang thanh co lau tren cong thanh
+  'Bảo tàng': '🏺',
+  'Tôn giáo': '☸️', // banh xe Phap - chua Phat giao
   'Khu phố': '🏮',
   'Chợ': '🧺',
-  'Kiến trúc': '🌉',
+  'Kiến trúc': '📐',
   'Quảng trường': '🚩',
   'Văn hóa': '📚',
   'Nghệ thuật': '🎭',

@@ -9,7 +9,7 @@ const FIELDS = `
   a.Category AS category, a.OpeningHours AS openingHours, a.TicketPrice AS ticketPrice,
   a.ImageUrl AS imageUrl, a.ImageCredit AS imageCredit, a.ImageSourceUrl AS imageSourceUrl,
   a.HoursSummary AS hoursSummary, a.PriceFrom AS priceFrom, a.VisitDuration AS visitDuration,
-  a.BestTime AS bestTime, a.Tips AS tips,
+  a.BestTime AS bestTime, a.Tips AS tips, a.Facts AS facts, a.Timeline AS timeline,
   a.PopularityScore AS popularityScore, a.Status AS status,
   a.CreatedAt AS createdAt, a.UpdatedAt AS updatedAt`;
 
@@ -32,6 +32,8 @@ const COLUMNS: ColumnMap = {
   visitDuration: { column: 'VisitDuration', type: sql.NVarChar(100) },
   bestTime: { column: 'BestTime', type: sql.NVarChar(300) },
   tips: { column: 'Tips', type: sql.NVarChar(sql.MAX) },
+  facts: { column: 'Facts', type: sql.NVarChar(sql.MAX) },
+  timeline: { column: 'Timeline', type: sql.NVarChar(sql.MAX) },
   popularityScore: { column: 'PopularityScore', type: sql.Int },
   status: { column: 'Status', type: sql.VarChar(20) },
 };
@@ -168,6 +170,23 @@ export const attractionRepository = {
       WHERE ats.AttractionId = @id AND s.Status = 'ACTIVE'
       ORDER BY ats.WalkingDistance`);
     return r.recordset;
+  },
+
+  /** Cac tuyen dang chay qua nhung tram gan dia diem (hien "di tuyen nao" o trang chi tiet) */
+  async routesAtStations(stationIds: number[]) {
+    if (stationIds.length === 0) return [] as { stationId: number; routeId: number; routeCode: string; routeName: string }[];
+    const pool = await getPool();
+    const req = pool.request();
+    const params = stationIds.map((id, i) => {
+      req.input(`s${i}`, sql.Int, id);
+      return `@s${i}`;
+    });
+    const r = await req.query(`
+      SELECT DISTINCT rs.StationId AS stationId, r.RouteId AS routeId, r.RouteCode AS routeCode, r.RouteName AS routeName
+      FROM RouteStations rs JOIN Routes r ON r.RouteId = rs.RouteId
+      WHERE r.Status = 'ACTIVE' AND rs.StationId IN (${params.join(', ')})
+      ORDER BY r.RouteCode`);
+    return r.recordset as { stationId: number; routeId: number; routeCode: string; routeName: string }[];
   },
 
   create: (data: Record<string, any>) => insertRow('TouristAttractions', 'AttractionId', COLUMNS, data),

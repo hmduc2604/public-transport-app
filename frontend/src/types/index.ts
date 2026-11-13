@@ -177,7 +177,28 @@ export interface AttractionImage {
 
 export interface AttractionDetail extends Attraction {
   images: AttractionImage[];
-  nearbyStations: (Station & { walkingDistance: number; walkingDuration: number })[];
+  /** Du kien nhanh: nam xay dung, xep hang, ... */
+  facts: { label: string; value: string }[];
+  /** Moc lich su theo thu tu thoi gian */
+  timeline: { year: string; event: string }[];
+  nearbyStations: (Station & {
+    walkingDistance: number;
+    walkingDuration: number;
+    routes: { routeId: number; routeCode: string; routeName: string }[];
+  })[];
+  nearbyAttractions: NearbyAttraction[];
+}
+
+export interface NearbyAttraction {
+  attractionId: number;
+  name: string;
+  category: string | null;
+  imageUrl: string | null;
+  hoursSummary: string | null;
+  priceFrom: string | null;
+  imageCount: number;
+  distanceMeters: number;
+  walkingMinutes: number;
 }
 
 /* ---------- Routing ---------- */

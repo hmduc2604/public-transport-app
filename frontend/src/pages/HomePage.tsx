@@ -61,7 +61,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="hero-modes">
-          {['🚌 Bus', '🚇 Metro', '🚲 Xe đạp', '🛺 Xe điện'].map((m) => (
+          {['🚌 Bus', '🚇 Metro', '🚲 Xe đạp', '🛵 Xe điện'].map((m) => (
             <span key={m} className="hero-mode">
               {m}
             </span>

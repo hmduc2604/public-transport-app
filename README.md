@@ -37,8 +37,9 @@ Máy chưa cài SQL Server nên dùng SQL Server 2022 trong Docker (container `p
 |---|---|
 | `run-all.bat` | Bật Docker → bật SQL Server → tạo DB lần đầu → ghi `backend/.env` → `npm install` → chạy backend (cửa sổ "HanoiGo Backend") + frontend ("HanoiGo Frontend") → mở http://localhost:5173 |
 | `reset-db.bat` | Xóa container và tạo lại database + dữ liệu mẫu từ đầu (sau đó tắt/mở lại cửa sổ backend để băm lại mật khẩu seed) |
-| `api-test.bat` | Chạy 78 test API toàn luồng (gồm các trường hợp lỗi / bảo mật), kết quả ở `api-test.log` |
-| `upgrade-db.bat` | Cập nhật database đang chạy lên bản mới nhất (chạy lần lượt `05` → `09`, không xóa dữ liệu, chạy lại nhiều lần vẫn an toàn) |
+| `api-test.bat` | Chạy 85 test API toàn luồng (gồm các trường hợp lỗi / bảo mật), kết quả ở `api-test.log` |
+| `stability-test.bat` | Kiểm tra độ ổn định: chịu tải đồng thời (≈ 3.000 request), thanh toán trùng cùng lúc, và **tắt SQL Server 10 giây** rồi bật lại để xem backend có tự phục hồi không. Chỉ chạy trên máy thử nghiệm; kết quả ở `stability-test.log` |
+| `upgrade-db.bat` | Cập nhật database đang chạy lên bản mới nhất (chạy lần lượt `05` → `10`, không xóa dữ liệu, chạy lại nhiều lần vẫn an toàn) |
 | `install-deps.bat` | Cài / cập nhật thư viện cho backend + frontend, xong tự khởi động lại 2 cửa sổ |
 | `restart-app.bat` | Khởi động lại backend + frontend (khi backend bị treo hoặc vừa đổi thư viện) |
 
@@ -127,11 +128,12 @@ Metro đi trên cao nên vẫn nối thẳng giữa các ga. Cấu hình trong `
 
 ## Địa điểm tham quan: thông tin và ảnh
 
-- **Thông tin chi tiết** cho 20 địa điểm: giới thiệu, lịch sử, điểm nổi bật, giờ mở cửa, giá vé (tra cứu 11/2026 – có thể thay đổi), thời gian tham quan gợi ý, thời điểm đẹp nhất, lưu ý khi tham quan. Thẻ ở mục **Khám phá** hiện nhanh địa chỉ, giờ mở cửa, thời gian tham quan, giá vé và số ảnh.
+- **Thông tin chi tiết** cho 20 địa điểm: giới thiệu, lịch sử, điểm nổi bật, giờ mở cửa, giá vé (tra cứu 11/2026 – có thể thay đổi), thời gian tham quan gợi ý, thời điểm đẹp nhất, lưu ý khi tham quan, **thông tin nhanh** (năm xây dựng, xếp hạng di tích...) và **mốc lịch sử** (cả 20 địa điểm, mỗi nơi ít nhất 4 thông tin nhanh và 2 mốc). Thẻ ở mục **Khám phá** hiện nhanh địa chỉ, giờ mở cửa, thời gian tham quan, giá vé và số ảnh.
+- **Trang chi tiết** (`pages/AttractionDetailPage.tsx`): ảnh phủ kín đầu trang + 3 ảnh xem trước, dải thông tin (giờ mở cửa, giá vé, thời gian tham quan, trạm gần nhất), cột phải "Đến bằng phương tiện công cộng" (mỗi trạm kèm số tuyến dừng tại đó và số phút đi bộ, bản đồ nhỏ, nút tìm lộ trình), trục mốc lịch sử, kinh nghiệm tham quan, bộ sưu tập ảnh và mục **Đi tiếp gần đây** (4 địa điểm trong bán kính 3 km). Thanh **mục lục** dính dưới menu (Tổng quan · Đi lại · Nổi bật · Lịch sử · Kinh nghiệm · Hình ảnh · Gần đây) tự sáng mục đang đọc, kèm nút Tìm đường; nút **Chia sẻ** mở bảng chia sẻ của điện thoại hoặc chép liên kết. Icon nét SVG (`components/Icon.tsx`) thay cho emoji để hiển thị giống nhau trên mọi máy.
 - **Ảnh**: 1 ảnh đại diện (phủ kín đầu trang chi tiết) + 3–5 ảnh bộ sưu tập mỗi địa điểm, xem phóng to bằng lightbox. Ảnh lấy từ [Wikimedia Commons](https://commons.wikimedia.org) (giấy phép tự do CC0 / Public domain / CC BY / CC BY-SA), lưu sẵn trong `frontend/public/images/attractions/` và `.../gallery/`.
 - **Ghi nguồn ảnh** (bắt buộc với CC BY / CC BY-SA): mục "Nguồn ảnh" thu gọn cuối trang chi tiết, cột `ImageCredit` / bảng `AttractionImages`, và file `frontend/public/images/attractions/CREDITS.md`.
-- Bảng mới `AttractionImages`; cột mới `HoursSummary`, `PriceFrom`, `VisitDuration`, `BestTime`, `Tips` trong `TouristAttractions`. Admin sửa được tất cả, kể cả bộ sưu tập ảnh (mỗi dòng: `URL | chú thích | tác giả / giấy phép | link nguồn`).
-- Database đã có dữ liệu: chạy `upgrade-db.bat` (chạy `05_attraction_images.sql` + `06_attraction_details.sql`, không xóa dữ liệu khác).
+- Bảng mới `AttractionImages`; cột mới `HoursSummary`, `PriceFrom`, `VisitDuration`, `BestTime`, `Tips`, `Facts`, `Timeline` trong `TouristAttractions`. Admin sửa được tất cả, kể cả bộ sưu tập ảnh (mỗi dòng: `URL | chú thích | tác giả / giấy phép | link nguồn`), thông tin nhanh (`Nhãn | Giá trị`) và mốc lịch sử (`Năm | Sự kiện`).
+- Database đã có dữ liệu: chạy `upgrade-db.bat` (chạy `05_attraction_images.sql`, `06_attraction_details.sql`, `10_attraction_guide.sql`, không xóa dữ liệu khác).
 - Tải lại ảnh nếu thiếu: `download-images.bat` (chỉ tải file chưa có; Wikimedia giới hạn tốc độ nên mất khoảng 20–30 phút cho lần đầu).
 
 ## Đăng ký có xác nhận qua Email / SMS
@@ -218,3 +220,55 @@ Chỉ còn 2 phương thức (đã bỏ ví điện tử): `/payment/:orderId` c
 | Database | 7 xe buýt xoay vòng cho 20 tuyến → 1 xe chạy nhiều chuyến **cùng lúc**; 9 cột khóa ngoại chưa có index | `09_data_fixes.sql`: mỗi tuyến có đội xe riêng (đủ xe theo giãn cách và thời gian chuyến), 0 chuyến trùng; thêm index |
 | Frontend | Backend khởi động lại đúng lúc mở trang → bị đăng xuất; vào `/login` khi đã đăng nhập vẫn hiện form | Chỉ đăng xuất khi token thật sự sai (401); đã đăng nhập thì tự chuyển trang |
 | Quản trị | Trang Lịch trình chỉ hiện 500/1184 chuyến | Hiện đủ |
+
+## Kiểm tra lần 2 (13/11/2026): ảnh, icon, trang chi tiết, độ ổn định
+
+**Ảnh**: đối chiếu từng ảnh (120 ảnh) với địa điểm và chú thích.
+
+| Lỗi | Đã sửa |
+|---|---|
+| Ảnh đại diện Phố cổ, Quảng trường Ba Đình, Chùa Một Cột, Văn Miếu, Bảo tàng Lịch sử: ảnh dọc bị cắt mất chủ thể, độ phân giải thấp hoặc trùng với ảnh trong bộ sưu tập | Thay ảnh ngang 1600px rõ chủ thể (Khuê Văn Các, Chùa Một Cột, phố cổ, mặt tiền bảo tàng...) |
+| Hỏa Lò chỉ có 3 ảnh (có ảnh chụp lại ảnh tư liệu), Ba Đình 4 ảnh | Bổ sung đủ 5 ảnh chụp tại chỗ cho mỗi địa điểm |
+| Bộ sưu tập Phố sách in dấu ngày giờ / watermark của điện thoại | Thay ảnh khác và cắt bỏ dải dấu ngày giờ (ghi chú trong nguồn ảnh) |
+| Một số ảnh Phố cổ, Ba Đình, Chùa Một Cột, Văn Miếu chung chung, trùng ảnh đại diện mới hoặc không đúng chủ thể trong chú thích | Thay ảnh đúng chủ thể: Ô Quan Chưởng, chùa Diên Hựu, nhà bia tiến sĩ trên lưng rùa... |
+| 11 chú thích không khớp ảnh: 5 ảnh phố Tạ Hiện (ảnh đêm ghi "ban ngày" và ngược lại), tranh vẽ ghi "mô hình thuyền chiến", ảnh khu vườn ghi "hiện vật trưng bày", ảnh hồ về đêm không thấy Tháp Rùa vẫn ghi "Tháp Rùa"... | Viết lại chú thích theo đúng nội dung ảnh |
+
+Danh sách tác giả / giấy phép sinh lại từ database: `frontend/public/images/attractions/CREDITS.md`. Thay đổi DB nằm trong `database/10_attraction_guide.sql` (đã gộp vào `01_database.sql` + `02_seed.sql` cho lần cài mới).
+
+**Icon**: loại địa điểm dùng icon đúng nghĩa hơn (Di tích 🏛️, Di sản 🏯, Bảo tàng 🏺, Tôn giáo ☸️, Kiến trúc 📐); xe điện 🛵 thay 🛺 (xe lam/tuk-tuk). Trang chi tiết dùng bộ icon nét SVG.
+
+**Độ ổn định** (`stability-test.bat`, `api-test.bat`, kiểm tra toàn vẹn DB 29 nhóm truy vấn):
+
+| Kiểm tra | Kết quả |
+|---|---|
+| 2.000 request đọc dữ liệu, 50 request song song | 100% thành công, 160–200 request/giây, 95% dưới 0,7 giây |
+| 200–300 lần tìm lộ trình, 20 song song | 100% thành công, 95% dưới 1,5 giây |
+| 5 lần thanh toán **cùng lúc** cho 1 đơn | Chỉ 1 lần thành công, 4 lần bị chặn `ORDER_ALREADY_PAID`, sinh đúng 1 vé |
+| Tạo / hủy 20 đơn cùng lúc | Đủ 20 đơn, mã không trùng |
+| 4 vòng tải liên tiếp (≈ 9.200 request) | RAM backend ổn định ~350 MB, không tăng dần (không rò rỉ bộ nhớ) |
+| Tắt SQL Server 10 giây | Backend không sập, trả 503 `DB_UNAVAILABLE`; bật lại DB thì tự kết nối lại sau ~14 giây (thời gian SQL Server khởi động) |
+| Type-check, build, `npm audit`, 13 test tìm đường, 85 test API, toàn vẹn dữ liệu | Đạt hết, 0 lỗ hổng |
+
+Gia cố thêm: bắt sự kiện lỗi của connection pool (`config/database.ts`) và ghi log Promise bị từ chối không ai bắt (`server.ts`) để một lỗi kết nối bất ngờ không làm dừng cả backend.
+
+## Kiểm tra lần 3 (13/11/2026)
+
+**Ảnh**: xem lại cả 120 ảnh (ảnh đại diện + bộ sưu tập) theo từng địa điểm: tất cả đúng chỗ, không còn ảnh sai chủ thể. Viết lại 3 chú thích còn chung chung ở Hồ Tây ("Hồ Tây", "Bờ Hồ Tây", "Chiều Hồ Tây" → hoa giấy bên hồ, hàng cọ ven hồ, chùa Trấn Quốc lúc chiều tà).
+
+**Nội dung**: bổ sung mốc lịch sử cho 4 địa điểm còn thiếu (Hồ Tây, Bảo tàng Dân tộc học, phố Tạ Hiện, Phố sách) và thêm mốc cho 4 nơi còn ít (Quảng trường Ba Đình, Bảo tàng Lịch sử Quốc gia, Bảo tàng Mỹ thuật, Nhà hát Múa rối Thăng Long); mỗi địa điểm đủ 4 thông tin nhanh. Bỏ chi tiết "phố Tạ Hiện tên cũ là Hàng Guột" vì không tìm được nguồn xác nhận, thay bằng tên thời Pháp (Rue Géraud) và năm đổi tên 1945. Dữ liệu nằm trong `database/10_attraction_guide.sql` (đã gộp vào `02_seed.sql`, `06_attraction_details.sql`).
+
+**Trang chi tiết**: thêm thanh mục lục dính + nút Chia sẻ; trên điện thoại tăng lớp tối sau tên địa điểm (ảnh sáng như Bảo tàng Dân tộc học trước đây làm chữ khó đọc). **Icon**: "Ít đi bộ" đổi 🦶 → 🚶.
+
+**Database / backend**:
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Cài database mới từ đầu (`01` + `02` trên DB tạm) | 20 bảng, đủ dữ liệu, 0 xe trùng lịch |
+| Nâng cấp DB đang chạy (`10_attraction_guide.sql`) | Đạt, chạy lại nhiều lần vẫn an toàn |
+| Toàn vẹn dữ liệu (29 nhóm truy vấn) | Không có vi phạm |
+| Test API (`api-test.bat`) | 86/86, thêm kiểm tra cả 20 địa điểm đủ thông tin nhanh, mốc lịch sử, 5 ảnh |
+| Test tìm đường, type-check, build, `npm audit` | 13/13, 0 lỗi, 0 lỗ hổng |
+| Tải đồng thời (`stability-test.bat`) | 2.000 request đọc p95 277 ms; 200 lần tìm đường p95 889 ms; 5 lần thanh toán cùng lúc chỉ 1 lần trừ tiền |
+| Tắt SQL Server 10 giây | Backend không sập, trả 503; tự kết nối lại sau 11,5 giây |
+
+`api-test.bat` nay tự dọn trạm / tuyến thử (mã `BUS-TEST…`, `BUSTEST…`) bằng `database/99_cleanup_test_data.sql` sau khi chạy, để trang quản trị không còn dữ liệu rác.

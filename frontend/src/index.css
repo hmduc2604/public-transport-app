@@ -184,28 +184,8 @@ textarea.input { resize: vertical; }
 .attraction-card-body .card-foot { margin-top: auto; }
 .attraction-card-body .card-facts { margin-bottom: 0.7rem; }
 
-/* Trang chi tiet: anh dau trang phu kin chieu ngang */
-.detail-banner { position: relative; height: clamp(300px, 52vh, 480px); overflow: hidden; background: var(--ink); }
-.detail-banner > .cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.detail-banner-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 22, 42, 0.45) 0%, rgba(10, 22, 42, 0.1) 30%, rgba(10, 22, 42, 0.55) 60%, rgba(10, 22, 42, 0.88) 100%); }
-.detail-banner-inner { position: absolute; left: 0; right: 0; bottom: 0; max-width: 1180px; margin: 0 auto; padding: 1.25rem 1.25rem 1.6rem; color: #fff; display: flex; flex-direction: column; align-items: flex-start; gap: 0.45rem; }
-.detail-banner-inner h1 { color: #fff; font-size: clamp(1.7rem, 4vw, 2.6rem); margin: 0; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35); }
-.detail-banner-inner p { margin: 0 0 0.4rem; color: rgba(255, 255, 255, 0.9); }
-.detail-banner .banner-back { color: rgba(255, 255, 255, 0.9); font-size: 0.9rem; }
-.chip-glass { background: rgba(255, 255, 255, 0.18); border-color: rgba(255, 255, 255, 0.35); color: #fff; backdrop-filter: blur(6px); }
 .btn-glass { background: rgba(255, 255, 255, 0.16); color: #fff; border: 1px solid rgba(255, 255, 255, 0.45); backdrop-filter: blur(6px); }
 .btn-glass:hover:not(:disabled) { background: rgba(255, 255, 255, 0.28); }
-.detail-banner-inner { top: 0; justify-content: flex-end; }
-.detail-banner-inner .banner-back { position: absolute; top: 1rem; left: 1.25rem; }
-.detail-body { padding-top: 0; }
-.quick-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.75rem; margin: -1.6rem 0 1.2rem; position: relative; z-index: 2; }
-.quick-fact { display: flex; gap: 0.7rem; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.8rem 0.95rem; box-shadow: var(--shadow); }
-.quick-fact-icon { font-size: 1.3rem; line-height: 1.2; }
-.quick-fact-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.quick-fact-value { font-weight: 600; color: var(--ink); font-size: 0.92rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.tips { margin: 0; padding-left: 1.1rem; }
-.tips li { margin-bottom: 0.35rem; }
-.card-tips { border-left: 4px solid var(--ochre); }
 
 /* Bo suu tap anh */
 .gallery-section { margin-top: 1.6rem; }
@@ -230,30 +210,17 @@ textarea.input { resize: vertical; }
 .lightbox { position: fixed; inset: 0; z-index: 3000; background: rgba(8, 14, 26, 0.92); display: flex; align-items: center; justify-content: center; padding: 3rem 4rem; }
 .lightbox figure { margin: 0; max-width: 100%; max-height: 100%; display: flex; flex-direction: column; align-items: center; }
 .lightbox img { max-width: 100%; max-height: calc(100vh - 8rem); object-fit: contain; border-radius: 6px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); }
-.lightbox figcaption { color: #fff; margin-top: 0.7rem; font-size: 0.95rem; text-align: center; }
-.lightbox figcaption .muted { color: rgba(255, 255, 255, 0.6); }
+.lightbox figcaption { color: #fff; margin-top: 0.8rem; font-size: 0.95rem; display: flex; gap: 0.9rem; align-items: baseline; justify-content: center; text-align: center; }
+.lightbox-count { color: rgba(255, 255, 255, 0.6); font-variant-numeric: tabular-nums; font-size: 0.85rem; }
 .lightbox-close, .lightbox-nav { position: absolute; background: rgba(255, 255, 255, 0.12); color: #fff; border: 0; border-radius: 999px; cursor: pointer; display: grid; place-items: center; }
-.lightbox-close { top: 1rem; right: 1rem; width: 2.5rem; height: 2.5rem; font-size: 1.1rem; }
-.lightbox-nav { top: 50%; transform: translateY(-50%); width: 3rem; height: 3rem; font-size: 2rem; line-height: 1; }
+.lightbox-close { top: 1rem; right: 1rem; width: 2.75rem; height: 2.75rem; }
+.lightbox-nav { top: 50%; transform: translateY(-50%); width: 3rem; height: 3rem; }
 .lightbox-nav.prev { left: 1rem; }
 .lightbox-nav.next { right: 1rem; }
 .lightbox-close:hover, .lightbox-nav:hover { background: rgba(255, 255, 255, 0.25); }
 .cover-placeholder span { font-size: 3rem; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25)); }
 .recommend { margin-top: 1.6rem; }
 
-/* ---------- Attraction detail ---------- */
-.detail-hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.5rem; align-items: center; margin-bottom: 1.2rem; }
-.detail-hero-text h1 { font-size: 2rem; margin-top: 0.5rem; }
-.detail-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; align-items: start; }
-.highlights { margin: 0; padding-left: 1.1rem; }
-.highlights li { margin-bottom: 0.3rem; }
-.info-list { margin: 0; }
-.info-list dt { font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-.info-list dd { margin: 0 0 0.7rem; }
-.station-list { list-style: none; padding: 0; margin: 0; }
-.station-list li { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0; border-bottom: 1px dashed var(--line); }
-.station-list li:last-child { border-bottom: none; }
-.mini-map { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
 
 /* ---------- Map ---------- */
 .map { width: 100%; height: 100%; min-height: 300px; z-index: 0; }
@@ -461,7 +428,7 @@ textarea.input { resize: vertical; }
   .map-page { grid-template-columns: 1fr; height: auto; }
   .planner { border-right: none; order: 2; }
   .map-area { height: 60vh; order: 1; }
-  .detail-grid, .detail-hero, .buy-grid, .hero { grid-template-columns: 1fr; }
+  .buy-grid, .hero { grid-template-columns: 1fr; }
   .admin-shell { grid-template-columns: 1fr; }
   .admin-side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; }
   .admin-group { display: flex; flex-wrap: wrap; gap: 0.2rem; }
@@ -486,8 +453,6 @@ textarea.input { resize: vertical; }
   .gallery, .gallery-n3, .gallery-n4, .gallery-n5 { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 130px; }
   .gallery-n3 .gallery-item:first-child { grid-column: span 2; grid-row: span 2; }
   .gallery-caption { opacity: 1; }
-  .quick-facts { grid-template-columns: 1fr 1fr; margin-top: -1.2rem; }
-  .quick-fact { padding: 0.65rem 0.7rem; }
   .lightbox { padding: 3.5rem 0.5rem; }
   .lightbox-nav { top: auto; bottom: 1rem; transform: none; }
 }
@@ -602,4 +567,198 @@ textarea.input { resize: vertical; }
   .pay-layout aside { position: static; order: -1; }
   .transfer-grid { grid-template-columns: 1fr; }
   .card-form { max-width: none; }
+}
+
+/* =====================================================================
+   Trang chi tiet dia diem (.place)
+   Anh dau trang phu kin + dai thong tin + cot noi dung / cot "den bang PTCC"
+   ===================================================================== */
+.icon { flex: none; vertical-align: -0.2em; }
+.place { --place-max: 1180px; --ochre-soft: #fbf1d9; --tabs-h: 54px; padding-bottom: 3.5rem; overflow-x: clip; }
+/* Cuon toi muc: chua cho thanh menu + thanh muc luc */
+.place [data-spy] { scroll-margin-top: calc(var(--topbar-h) + var(--tabs-h) + 18px); }
+
+/* Anh dau trang */
+.place-hero { position: relative; height: clamp(400px, 64vh, 600px); background: var(--ink); color: #fff; overflow: hidden; }
+.place-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.place-hero-ph { background: linear-gradient(135deg, var(--ink), var(--ink-2)); }
+.place-hero-shade {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, rgba(9, 20, 38, 0.5) 0%, rgba(9, 20, 38, 0) 20%),
+    linear-gradient(0deg, rgba(9, 20, 38, 0.92) 0%, rgba(9, 20, 38, 0.62) 30%, rgba(9, 20, 38, 0) 62%);
+}
+.place-hero-inner { position: relative; height: 100%; max-width: var(--place-max); margin: 0 auto; padding: 1.1rem 1.25rem 4.4rem; display: flex; flex-direction: column; justify-content: space-between; }
+.place-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 0.35rem; color: #fff; font-weight: 600; font-size: 0.92rem; padding: 0.38rem 0.8rem 0.38rem 0.6rem; border-radius: 999px; background: rgba(9, 20, 38, 0.38); backdrop-filter: blur(6px); }
+.place-back:hover { text-decoration: none; background: rgba(9, 20, 38, 0.6); }
+.place-hero-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; }
+.place-hero-text { max-width: 46rem; min-width: 0; }
+.place-cat { display: inline-block; font-size: 0.85rem; font-weight: 600; color: var(--ink); background: var(--ochre); border-radius: 6px; padding: 0.15rem 0.6rem; margin-bottom: 0.75rem; }
+.place-hero h1 { color: #fff; font-size: clamp(2.1rem, 4.8vw, 3.6rem); font-weight: 800; line-height: 1.06; letter-spacing: -0.02em; margin: 0 0 0.6rem; text-wrap: balance; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 18px rgba(0, 0, 0, 0.4); }
+.place-addr { display: flex; align-items: flex-start; gap: 0.4rem; margin: 0 0 1.15rem; color: rgba(255, 255, 255, 0.9); }
+.place-addr .icon { margin-top: 0.15rem; }
+.place-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.place-photos-btn { display: none; }
+.place-share { gap: 0.45rem; }
+
+/* 3 anh xem truoc goc phai anh dau trang */
+.place-peek { display: flex; flex: none; padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 12px; }
+.place-peek-item { position: relative; width: 116px; height: 86px; border-radius: 10px; overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.92); margin-left: -20px; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35); background: var(--ink-2); transition: margin-left 0.2s ease; }
+.place-peek-item:first-child { margin-left: 0; }
+.place-peek-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.place-peek-more { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(9, 20, 38, 0.55); color: #fff; font-weight: 700; font-size: 1.05rem; }
+.place-peek:hover .place-peek-item:not(:first-child), .place-peek:focus-visible .place-peek-item:not(:first-child) { margin-left: -6px; }
+
+/* Dai thong tin nhanh (de len mep duoi anh) */
+.place-wrap { max-width: var(--place-max); margin: 0 auto; padding: 0 1.25rem; }
+.place-facts { position: relative; z-index: 2; margin-top: -3rem; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--surface); border-radius: 16px; box-shadow: 0 1px 2px rgba(19, 41, 75, 0.08), 0 14px 40px rgba(19, 41, 75, 0.12); }
+.place-fact { display: flex; gap: 0.8rem; padding: 1.05rem 1.2rem; min-width: 0; }
+.place-fact + .place-fact { border-left: 1px solid var(--line); }
+.place-fact-icon { width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center; background: var(--ochre-soft); color: var(--ochre-2); flex: none; }
+.place-fact-text { display: flex; flex-direction: column; min-width: 0; }
+.place-fact-label { font-size: 0.82rem; color: var(--muted); }
+.place-fact-value { font-size: 1rem; color: var(--ink); font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.place-fact-sub { font-size: 0.82rem; color: var(--muted); margin-top: 0.1rem; }
+
+/* Noi dung + cot phai */
+/* Thanh muc luc dinh duoi thanh menu (nen trai rong het chieu ngang man hinh) */
+.place-tabs { position: sticky; top: var(--topbar-h); z-index: 20; margin-top: 1.6rem; }
+.place-tabs::before { content: ''; position: absolute; inset: 0 calc(50% - 50vw); z-index: -1; background: rgba(245, 243, 238, 0.94); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.place-tabs-inner { display: flex; align-items: center; gap: 1rem; min-height: var(--tabs-h); }
+.place-tabs-links { display: flex; gap: 1.6rem; flex: 1; min-width: 0; align-self: stretch; overflow-x: auto; scrollbar-width: none; }
+.place-tabs-links::-webkit-scrollbar { display: none; }
+.place-tab { display: inline-flex; align-items: center; white-space: nowrap; font-size: 0.95rem; font-weight: 600; color: var(--muted); box-shadow: inset 0 -3px 0 transparent; transition: color 0.15s ease, box-shadow 0.15s ease; }
+.place-tab:hover { color: var(--ink); text-decoration: none; }
+.place-tab.active { color: var(--ink); box-shadow: inset 0 -3px 0 var(--ochre); }
+.place-tab.stacked-only { display: none; }
+.place-tabs-cta { flex: none; gap: 0.35rem; }
+
+.place-body { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-areas: "lead side" "main side"; column-gap: 3.5rem; margin-top: 2.25rem; align-items: start; }
+.place-lead-area { grid-area: lead; min-width: 0; }
+.place-main { grid-area: main; min-width: 0; }
+.place-side { grid-area: side; display: grid; gap: 1rem; min-width: 0; }
+.place-lead { font-size: 1.22rem; line-height: 1.6; color: var(--text); max-width: 40em; margin: 0 0 2.4rem; }
+.place-section { margin-bottom: 2.75rem; max-width: 44rem; }
+.place-section h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
+.place-prose { font-size: 1.02rem; line-height: 1.75; max-width: 40em; }
+
+.place-factlist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 1.75rem; margin: 0; }
+.place-factlist > div { padding: 0.55rem 0 0.55rem 0.95rem; border-left: 3px solid var(--ochre); }
+.place-factlist dt { font-size: 0.85rem; color: var(--muted); }
+.place-factlist dd { margin: 0.1rem 0 0; font-weight: 600; color: var(--ink); line-height: 1.4; }
+
+.place-highlights { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem 1.75rem; }
+.place-highlights li { position: relative; padding-left: 1.35rem; line-height: 1.5; }
+.place-highlights li::before { content: ''; position: absolute; left: 0.15rem; top: 0.52em; width: 0.5rem; height: 0.5rem; background: var(--ochre); transform: rotate(45deg); border-radius: 1px; }
+
+/* Moc lich su: truc doc, nam ben trai (ten rieng .place-timeline: .timeline la cua chi tiet lo trinh) */
+.place-timeline { list-style: none; margin: 1.5rem 0 0; padding: 0; position: relative; }
+.place-timeline::before { content: ''; position: absolute; left: 7.25rem; top: 0.6rem; bottom: 0.6rem; width: 2px; background: #e2d9c4; }
+.place-timeline li { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); column-gap: 1.5rem; padding: 0.55rem 0; position: relative; }
+.place-timeline li::before { content: ''; position: absolute; left: calc(7.25rem - 5px); top: 0.95rem; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 3px solid var(--ochre); box-sizing: border-box; }
+.place-timeline-year { font-weight: 800; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; line-height: 1.4; padding-top: 0.1rem; }
+.place-timeline-event { line-height: 1.55; padding-left: 0.6rem; }
+
+.place-tips { background: var(--ochre-soft); border-radius: 16px; padding: 1.4rem 1.6rem 1.15rem; }
+.place-tips h2 .icon { color: var(--ochre-2); }
+.place-tips ul { margin: 0; padding-left: 1.2rem; }
+.place-tips li { margin-bottom: 0.6rem; line-height: 1.55; }
+.place-tips li::marker { color: var(--ochre-2); }
+
+/* Cot phai */
+.place-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 1.2rem 1.2rem 1.3rem; }
+.place-panel h2 { font-size: 1.08rem; margin-bottom: 0.75rem; }
+/* Cot nhan phuong tien rong bang nhan dai nhat -> ten tram thang hang (subgrid) */
+.transit-list { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 0.65rem; }
+.transit-list li { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 0.65rem; align-items: start; padding: 0.7rem 0; border-bottom: 1px solid var(--line); }
+@supports (grid-template-columns: subgrid) { .transit-list li { grid-template-columns: subgrid; } }
+.transit-list .mode-badge { justify-self: start; }
+.transit-list li:first-child { padding-top: 0.15rem; }
+.transit-main { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.transit-name { font-weight: 600; color: var(--ink); line-height: 1.3; }
+.transit-lines { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.line-chip { font-size: 0.75rem; font-weight: 700; border: 1.5px solid; border-radius: 6px; padding: 0 0.35rem; line-height: 1.5; background: #fff; }
+.line-chip-more { border-color: var(--line); color: var(--muted); }
+.transit-walk { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
+.transit-walk strong { color: var(--ink); font-size: 0.92rem; }
+.place-map { margin-top: 1rem; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+.place-map .map-mini { height: 220px; min-height: 220px; }
+.visit-list { margin: 0; }
+.visit-list dt { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; font-weight: 600; color: var(--ink); margin-top: 0.95rem; }
+.visit-list dt:first-child { margin-top: 0; }
+.visit-list dt .icon { color: var(--ochre-2); }
+.visit-list dd { margin: 0.25rem 0 0; line-height: 1.55; font-size: 0.95rem; }
+.place-note { display: flex; gap: 0.45rem; margin: 1.1rem 0 0; font-size: 0.82rem; color: var(--muted); line-height: 1.45; }
+.place-note .icon { margin-top: 0.12rem; }
+
+/* Bo suu tap + dia diem lan can */
+.place-gallery { margin-top: 0.5rem; }
+.place-gallery-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.place-gallery-head h2 { font-size: 1.4rem; margin: 0; }
+.place-nearby { margin-top: 3rem; }
+.place-nearby h2 { font-size: 1.4rem; margin-bottom: 1rem; }
+.nearby-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.nearby-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; color: inherit; }
+.nearby-card:hover { text-decoration: none; border-color: #d4cbb8; }
+.nearby-card:hover .nearby-name { text-decoration: underline; }
+.nearby-media { aspect-ratio: 4 / 3; background: var(--line); }
+.nearby-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nearby-ph { display: grid; place-items: center; height: 100%; font-size: 2rem; }
+.nearby-body { display: flex; flex-direction: column; gap: 0.2rem; padding: 0.75rem 0.9rem 0.95rem; }
+.nearby-cat { font-size: 0.8rem; color: var(--muted); }
+.nearby-name { color: var(--ink); line-height: 1.3; }
+.nearby-dist { display: flex; align-items: center; gap: 0.3rem; font-size: 0.82rem; color: var(--muted); margin-top: 0.25rem; }
+
+.place a:focus-visible, .place button:focus-visible, .lightbox button:focus-visible { outline: 3px solid var(--ochre); outline-offset: 2px; }
+
+@media (max-width: 1000px) {
+  .place-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: "lead" "side" "main"; }
+  .place-side { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; margin-bottom: 2.6rem; }
+  .place-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .place-fact:nth-child(3) { border-left: 0; }
+  .place-fact:nth-child(n + 3) { border-top: 1px solid var(--line); }
+  .place-tab.stacked-only { display: inline-flex; }
+  .nearby-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .place-hero { height: auto; }
+  .place-hero-inner { min-height: 440px; padding: 0.9rem 1rem 3.9rem; }
+  /* Tren dien thoai chu chiem nua duoi anh -> lop toi cao hon de ten dia diem luon doc ro */
+  .place-hero-shade {
+    background:
+      linear-gradient(180deg, rgba(9, 20, 38, 0.45) 0%, rgba(9, 20, 38, 0) 18%),
+      linear-gradient(0deg, rgba(9, 20, 38, 0.95) 0%, rgba(9, 20, 38, 0.8) 40%, rgba(9, 20, 38, 0.3) 72%, rgba(9, 20, 38, 0.08) 100%);
+  }
+  .place-share-label, .place-tabs-cta-label { display: none; }
+  /* Nut chia se len goc phai anh, ngang hang nut "Kham pha" */
+  .place-share { position: absolute; top: 0.9rem; right: 1rem; padding: 0.42rem 0.7rem; border-radius: 999px; background: rgba(9, 20, 38, 0.38); border-color: transparent; }
+  .place { --tabs-h: 48px; }
+  .place-tabs { margin-top: 1.25rem; }
+  .place-tabs-links { gap: 1.25rem; }
+  .place-tab { font-size: 0.9rem; }
+  .place-tabs-cta { padding-inline: 0.7rem; }
+  .place-peek { display: none; }
+  .place-photos-btn { display: inline-flex; }
+  .place-wrap { padding: 0 1rem; }
+  .place-side { grid-template-columns: minmax(0, 1fr); }
+  .place-highlights, .place-factlist { grid-template-columns: minmax(0, 1fr); }
+  .place-lead { font-size: 1.1rem; margin-bottom: 2rem; }
+  .place-section { margin-bottom: 2.2rem; }
+  .place-timeline::before { left: 5px; }
+  .place-timeline li { grid-template-columns: minmax(0, 1fr); padding-left: 1.6rem; }
+  .place-timeline li::before { left: 0; top: 0.75rem; }
+  .place-timeline-year { text-align: left; }
+  .place-timeline-event { padding-left: 0; }
+  .place-tips { padding: 1.1rem 1.1rem 0.85rem; }
+  .place-gallery-head .btn { display: none; }
+}
+@media (max-width: 480px) {
+  .place-fact { padding: 0.8rem 0.75rem; gap: 0.55rem; }
+  .place-fact-icon { width: 2rem; height: 2rem; }
+  .place-fact-value { font-size: 0.92rem; }
+  .nearby-grid { gap: 0.7rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .place-peek-item, .gallery-item img { transition: none; }
+  .gallery-item:hover img { transform: none; }
 }

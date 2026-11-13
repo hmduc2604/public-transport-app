@@ -39,6 +39,10 @@ export function getPool(): Promise<sql.ConnectionPool> {
     poolPromise = new sql.ConnectionPool(config)
       .connect()
       .then((pool) => {
+        // Loi phat sinh SAU khi da ket noi (SQL Server khoi dong lai, rot mang...): chi ghi log.
+        // Pool tu bo ket noi hong va tao ket noi moi o request sau. Neu khong co listener,
+        // EventEmitter se nem loi 'error' ra ngoai va lam dung ca backend.
+        pool.on('error', (err: Error) => console.error('[DB] Pool error:', err?.message ?? err));
         console.log(`[DB] Connected to SQL Server: ${env.db.server}/${env.db.database}`);
         return pool;
       })

@@ -14,10 +14,31 @@ import { toTransportMode } from '../types/transport.types';
 
 const splitPipe = (v: unknown) => (v ? String(v).split('|').map((s) => s.trim()).filter(Boolean) : []);
 
-/** Highlights / Tips luu dang chuoi 'a|b|c' -> mang */
+/** Facts / Timeline luu moi dong 'nhan | gia tri' -> [{ label, value }] */
+const splitPairs = (v: unknown) =>
+  v
+    ? String(v)
+        .split(/\r?\n/)
+        .map((line) => {
+          const i = line.indexOf('|');
+          return i < 0 ? null : { label: line.slice(0, i).trim(), value: line.slice(i + 1).trim() };
+        })
+        .filter((x): x is { label: string; value: string } => !!x && !!x.label && !!x.value)
+    : [];
+
+/** Highlights / Tips luu dang chuoi 'a|b|c' -> mang; Facts / Timeline -> cap nhan - gia tri */
 function splitHighlights(a: any) {
-  return { ...a, highlights: splitPipe(a.highlights), tips: splitPipe(a.tips) };
+  return {
+    ...a,
+    highlights: splitPipe(a.highlights),
+    tips: splitPipe(a.tips),
+    facts: splitPairs(a.facts),
+    timeline: splitPairs(a.timeline).map((x) => ({ year: x.label, event: x.value })),
+  };
 }
+
+/** Phut di bo uoc tinh tu khoang cach duong chim bay (he so duong vong 1.25, 80 m/phut) */
+const walkMinutes = (m: number) => Math.max(1, Math.round((m * 1.25) / 80));
 
 export const attractionService = {
   async list(opts: { category?: string; search?: string; sort?: string }) {
@@ -35,11 +56,43 @@ export const attractionService = {
   async detail(id: number) {
     const a = await attractionRepository.getById(id);
     if (!a || a.status !== 'ACTIVE') throw AppError.notFound('Không tìm thấy địa điểm', 'ATTRACTION_NOT_FOUND');
-    const [stations, images] = await Promise.all([attractionRepository.nearbyStations(id), attractionRepository.images(id)]);
+    const [stations, images, all, counts] = await Promise.all([
+      attractionRepository.nearbyStations(id),
+      attractionRepository.images(id),
+      attractionRepository.list({}),
+      attractionRepository.imageCounts(),
+    ]);
+    const routes = await attractionRepository.routesAtStations(stations.map((s: any) => s.stationId));
+    // Dia diem lan can: 4 dia diem gan nhat trong ban kinh 3 km
+    const nearbyAttractions = all
+      .filter((x: any) => x.attractionId !== id)
+      .map((x: any) => ({ x, d: haversineMeters(a.latitude, a.longitude, x.latitude, x.longitude) }))
+      .filter((o) => o.d <= 3000)
+      .sort((p, q) => p.d - q.d)
+      .slice(0, 4)
+      .map(({ x, d }) => ({
+        attractionId: x.attractionId,
+        name: x.name,
+        category: x.category,
+        imageUrl: x.imageUrl,
+        hoursSummary: x.hoursSummary,
+        priceFrom: x.priceFrom,
+        imageCount: counts.get(x.attractionId) ?? 0,
+        distanceMeters: Math.round(d),
+        walkingMinutes: walkMinutes(d),
+      }));
     return {
       ...splitHighlights(a),
       images,
-      nearbyStations: stations.map((s: any) => ({ ...s, mode: toTransportMode(s.transportTypeName) })),
+      nearbyStations: stations.map((s: any) => {
+        const mode = toTransportMode(s.transportTypeName);
+        return {
+          ...s,
+          mode,
+          routes: routes.filter((r) => r.stationId === s.stationId).map(({ routeId, routeCode, routeName }) => ({ routeId, routeCode, routeName })),
+        };
+      }),
+      nearbyAttractions,
     };
   },
 
