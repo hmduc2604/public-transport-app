@@ -3,6 +3,8 @@
    - Tram ma 'BUS-TEST%', tuyen ma 'BUSTEST%' va moi thu gan voi chung
      (chuyen, gio chay, tram cua tuyen, luat gia, tram gan diem tham quan)
    - KHONG dong toi du lieu that: chi xoa theo tien to ma thu nghiem
+   - Dua lich su quan tam (AttractionViews) cua 2 tai khoan demo an@ / binh@ ve du lieu mau
+     (cac lan test / dien tap goi tro ly AI, tim duong se lam hong goi y "Danh cho ban")
    api-test.bat tu chay file nay sau khi test (khi dung SQL Server trong Docker).
    ===================================================================== */
 SET QUOTED_IDENTIFIER ON;
@@ -38,4 +40,30 @@ COMMIT;
 SELECT (SELECT COUNT(*) FROM @r) AS testRoutesRemoved,
        (SELECT COUNT(*) FROM @s) AS testStationsRemoved,
        (SELECT COUNT(*) FROM @t) AS testTripsRemoved;
+GO
+
+-- Lich su quan tam cua 2 tai khoan demo -> ve du lieu mau (giong 02_seed.sql / 11_ai_features.sql)
+IF OBJECT_ID('AttractionViews', 'U') IS NOT NULL
+BEGIN
+    DELETE v FROM AttractionViews v JOIN Users u ON u.UserId = v.UserId
+    WHERE u.Email IN ('an@example.com', 'binh@example.com');
+
+    INSERT INTO AttractionViews (UserId, AttractionId, Source, ViewedAt)
+    SELECT u.UserId, a.AttractionId, v.Source, DATEADD(DAY, -v.DaysAgo, SYSDATETIME())
+    FROM (VALUES
+        ('an@example.com',   N'Văn Miếu - Quốc Tử Giám',  'VIEW',   2),
+        ('an@example.com',   N'Hoàng thành Thăng Long',    'ROUTE',  5),
+        ('an@example.com',   N'Bảo tàng Lịch sử Quốc gia', 'VIEW',  10),
+        ('an@example.com',   N'Nhà tù Hỏa Lò',             'VIEW',  12),
+        ('binh@example.com', N'Hồ Tây',                    'VIEW',   1),
+        ('binh@example.com', N'Phố Tạ Hiện',               'ROUTE',  3),
+        ('binh@example.com', N'Cầu Long Biên',             'VIEW',   6),
+        ('binh@example.com', N'Chợ Đồng Xuân',             'VIEW',   8)
+    ) v(Email, Name, Source, DaysAgo)
+    JOIN Users u ON u.Email = v.Email
+    JOIN TouristAttractions a ON a.Name = v.Name;
+
+    SELECT COUNT(*) AS demoInterestRows FROM AttractionViews v JOIN Users u ON u.UserId = v.UserId
+    WHERE u.Email IN ('an@example.com', 'binh@example.com');
+END
 GO

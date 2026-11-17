@@ -3,6 +3,8 @@
    1. Them index cho cac cot khoa ngoai chua co index
    2. Doi xe theo tuyen: truoc day 7 xe buyt xoay vong cho 20 tuyen -> 1 xe chay nhieu chuyen
       CUNG LUC. Nay moi tuyen co doi xe rieng, khong xe nao trung gio.
+   3. Toa do Ho Tay: truoc la giua long ho (21.0553, 105.8189) -> tim duong phai di bo
+      vong ho ~8 km. Nay dat o bo ho tren duong Thanh Nien (diem ngam hoang hon).
    ===================================================================== */
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
@@ -71,4 +73,10 @@ FROM Trips a JOIN Trips b ON a.VehicleId = b.VehicleId AND a.TripId < b.TripId
 WHERE a.Status <> 'CANCELLED' AND b.Status <> 'CANCELLED'
   AND a.DepartureTime < b.ArrivalTime AND b.DepartureTime < a.ArrivalTime;
 SELECT t.Name AS Loai, COUNT(*) AS SoXe FROM Vehicles v JOIN TransportTypes t ON t.TransportTypeId = v.TransportTypeId GROUP BY t.Name;
+GO
+-- 3. Ho Tay: dua diem den tu giua long ho ra bo ho (duong Thanh Nien)
+UPDATE TouristAttractions
+SET Latitude = 21.047000, Longitude = 105.837800, Address = N'Đường Thanh Niên, Tây Hồ, Hà Nội'
+WHERE Name = N'Hồ Tây' AND (Latitude <> 21.047000 OR Longitude <> 105.837800);
+SELECT AttractionId, Name, Latitude, Longitude, Address FROM TouristAttractions WHERE Name = N'Hồ Tây';
 GO

@@ -1,7 +1,7 @@
 /**
  * Dinh tuyen frontend (theo tai lieu muc 11 - Frontend routing)
  *
- *  /login /register /  /map  /attractions/:id
+ *  /login /register /  /map  /assistant  /attractions/:id
  *  /tickets/buy  /payment/:orderId (/card, /transfer)  /tickets  /tickets/:id  /history  /profile
  *  /admin/...
  */
@@ -17,6 +17,7 @@ import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
 import AttractionDetailPage from './pages/AttractionDetailPage';
 import MapPage from './pages/MapPage';
+import AssistantPage from './pages/AssistantPage';
 import BuyTicketPage from './pages/BuyTicketPage';
 import PaymentPage from './pages/PaymentPage';
 import CardPaymentPage from './pages/CardPaymentPage';
@@ -55,6 +56,16 @@ const attractionGate = (el: ReactElement) => (
     {el}
   </LoginRequired>
 );
+const assistantGate = (el: ReactElement) => (
+  <LoginRequired
+    icon="✨"
+    title="Đăng nhập để dùng Trợ lý AI"
+    message="Trợ lý AI lập lộ trình chỉ dành cho thành viên HanoiGo. Đăng nhập hoặc tạo tài khoản miễn phí để bắt đầu hỏi đường."
+    perks={['Hỏi đường bằng tiếng Việt như nói chuyện', 'Lên lịch tham quan nhiều điểm trong một câu hỏi', 'Gợi ý địa điểm theo sở thích của bạn']}
+  >
+    {el}
+  </LoginRequired>
+);
 const mapGate = (el: ReactElement) => (
   <LoginRequired
     icon="🧭"
@@ -75,6 +86,7 @@ export default function App() {
         <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />
         <Route path="/register" element={<GuestOnly><RegisterPage /></GuestOnly>} />
         <Route path="/map" element={mapGate(<MapPage />)} />
+        <Route path="/assistant" element={assistantGate(<AssistantPage />)} />
         <Route path="/search" element={<Navigate to="/map" replace />} />
         <Route path="/attractions/:id" element={attractionGate(<AttractionDetailPage />)} />
         <Route path="/tickets/buy" element={<BuyTicketPage />} />

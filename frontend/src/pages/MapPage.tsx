@@ -5,7 +5,7 @@
  *   ->  hien Top 3 phuong an  ->  chon 1 phuong an  ->  ve tren ban do + chi tiet tung buoc
  *   ->  Luu lich su / Mua ve
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { MapView } from '../components/MapView';
 import { LocationPicker, PickedLocation } from '../components/LocationPicker';
@@ -68,10 +68,19 @@ export default function MapPage() {
   }, []);
 
   // 2. Doc tham so URL: ?to=attraction:11  ?from=station:1  ?focus=attraction:3
+  //    Tu Tro ly AI: ?from=geo:21.03,105.85&fromName=...&pref=LEAST_WALKING&time=08:30&auto=1 (tu tim luon)
+  const autoSearch = useRef(params.get('auto') === '1');
   useEffect(() => {
     if (stations.length === 0 && attractions.length === 0) return;
-    const resolve = (v: string | null): PickedLocation | null => {
+    const resolve = (v: string | null, name?: string | null): PickedLocation | null => {
       if (!v) return null;
+      const geo = /^geo:(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(v);
+      if (geo) {
+        const lat = Number(geo[1]);
+        const lng = Number(geo[2]);
+        const label = name || `Điểm đã chọn (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+        return { input: { latitude: lat, longitude: lng, name: label }, place: { name: label, latitude: lat, longitude: lng } };
+      }
       const [kind, idStr] = v.split(':');
       const id = Number(idStr);
       if (kind === 'attraction') {
@@ -84,12 +93,17 @@ export default function MapPage() {
       }
       return null;
     };
-    const to = resolve(params.get('to'));
-    const from = resolve(params.get('from'));
+    const to = resolve(params.get('to'), params.get('toName'));
+    const from = resolve(params.get('from'), params.get('fromName'));
     const f = resolve(params.get('focus'));
     if (to) setDestination(to);
     if (from) setOrigin(from);
     if (f) setFocus([f.place.latitude, f.place.longitude]);
+    const pref = params.get('pref') as RoutePreference | null;
+    if (pref && PREFS.includes(pref)) setPreference(pref);
+    const time = params.get('time');
+    if (time && /^([01]\d|2[0-3]):[0-5]\d$/.test(time)) setDeparture(time);
+    if (!(from && to)) autoSearch.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stations, attractions]);
 
@@ -118,6 +132,13 @@ export default function MapPage() {
     },
     [origin, destination, preference, departure],
   );
+
+  // Mo tu Tro ly AI (auto=1): du diem di + diem den thi tim ngay 1 lan
+  useEffect(() => {
+    if (!autoSearch.current || !origin || !destination) return;
+    autoSearch.current = false;
+    search(preference);
+  }, [origin, destination, preference, search]);
 
   // Tu dong tim lai khi doi tieu chi (neu da co ket qua)
   const changePreference = (p: RoutePreference) => {

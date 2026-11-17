@@ -85,7 +85,10 @@ async function request<T>(method: string, path: string, body?: unknown, query?: 
 
   if (!res.ok || !json || json.success === false) {
     if (res.status === 401 && token && onUnauthorized) onUnauthorized();
-    throw new ApiError(json?.message || `Lỗi ${res.status}`, res.status, json?.errorCode, json?.details);
+    // Khong co JSON + loi 5xx: thuong la backend dang khoi dong lai / chua chay (proxy cua Vite tra 500 rong)
+    const fallback =
+      !json && res.status >= 500 ? 'Không kết nối được máy chủ (backend đang khởi động lại hoặc chưa chạy). Vui lòng thử lại sau giây lát.' : `Lỗi ${res.status}`;
+    throw new ApiError(json?.message || fallback, res.status, json?.errorCode ?? (!json && res.status >= 500 ? 'NETWORK_ERROR' : undefined), json?.details);
   }
   return json.data;
 }

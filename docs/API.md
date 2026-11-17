@@ -21,7 +21,8 @@ Lỗi validate có thêm `details`: `{ "email": "Email không hợp lệ" }`.
 | 403 | `FORBIDDEN`, `ACCOUNT_LOCKED`, `TICKET_FORBIDDEN`, `ORDER_FORBIDDEN` |
 | 404 | `*_NOT_FOUND`, `NO_ROUTE_FOUND`, `API_NOT_FOUND` |
 | 409 | `EMAIL_EXISTS`, `DUPLICATE_VALUE`, `CONSTRAINT_VIOLATION`, `ORDER_ALREADY_PAID`, `VEHICLE_SCHEDULE_CONFLICT` (xe đã có chuyến trùng giờ) |
-| 429 | `TOO_MANY_LOGIN_ATTEMPTS` (sai mật khẩu 10 lần / 15 phút / IP), `TOO_MANY_CODE_REQUESTS` (gửi mã quá 10 lần / giờ / IP); header `Retry-After` |
+| 429 | `TOO_MANY_LOGIN_ATTEMPTS` (sai mật khẩu 10 lần / 15 phút / IP), `TOO_MANY_CODE_REQUESTS` (gửi mã quá 10 lần / giờ / IP), `TOO_MANY_REQUESTS` (trợ lý AI quá 40 câu / 10 phút / tài khoản), `AI_RATE_LIMITED` (hết lượt gọi Gemini); header `Retry-After` |
+| 502 / 503 / 504 | `AI_ERROR` / `AI_NOT_CONFIGURED`, `AI_KEY_INVALID`, `AI_UNAVAILABLE` / `AI_TIMEOUT` – chỉ ở các API trợ lý AI |
 | 500 / 503 | `INTERNAL_ERROR` / `DB_UNAVAILABLE` (mất kết nối database; backend tự kết nối lại khi database chạy lại) |
 
 ---
@@ -61,7 +62,8 @@ Lỗi validate có thêm `details`: `{ "email": "Email không hợp lệ" }`.
 | GET | `/attractions` | `category?`, `search?`, `sort=popular|name|newest` (kết hợp được) |
 | GET | `/attractions/featured` | `limit` |
 | GET | `/attractions/categories` | |
-| GET | `/attractions/recommend` | `categories=Di tích,Bảo tàng`, `lat?`, `lng?`, `limit` → điểm `S = 0.5P + 0.3C + 0.2D` |
+| GET | `/attractions/recommend` | `categories=Di tích,Bảo tàng`, `lat?`, `lng?`, `limit` → điểm `S = 0.5P + 0.3C + 0.2D` (công thức cũ, vẫn giữ) |
+| GET | `/attractions/suggestions` | **Gợi ý theo sở thích (AI)** – xem mục 7. Không bắt buộc đăng nhập; có token thì cá nhân hóa |
 | GET | `/attractions/nearby` | `lat`, `lng`, `radius`, `limit` |
 | GET | `/attractions/:id` | kèm `nearbyStations[]`; `highlights` là mảng |
 | GET | `/attractions/:id/nearby-stations` | |
@@ -196,6 +198,46 @@ Bổ sung:
 | POST | `/admin/routing/rebuild` | Xây lại graph tìm đường ngay |
 
 Danh sách phân trang trả về: `{ items, total, page, pageSize, totalPages }`.
+
+## 7. Trợ lý AI và gợi ý theo sở thích (Gemini)
+
+Cần `GEMINI_API_KEY` trong `backend/.env.local`. Không có khóa: gợi ý vẫn chạy bằng từ khóa (`mode: "basic"`), trợ lý trả `503 AI_NOT_CONFIGURED`.
+
+| Method | URL | Body / Query | Ghi chú |
+|---|---|---|---|
+| GET | `/attractions/suggestions` | `q?` (sở thích, ≤ 300 ký tự), `categories?`, `lat?`, `lng?`, `limit?` (≤ 12) | Đăng nhập tùy chọn; giới hạn 60 lần / 10 phút |
+| GET 🔒 | `/assistant/status` | | `{ configured, model, embeddingModel, availableModels }` |
+| POST 🔒 | `/assistant/chat` | `{ message, history?, location? }` | Giới hạn 40 câu / 10 phút / tài khoản |
+
+**`GET /attractions/suggestions`** – điểm mỗi địa điểm:
+
+`S = 0.5·Q + 0.25·H + 0.15·C + 0.15·D + 0.1·P` (thiếu thành phần nào thì chia lại theo tổng trọng số còn lại)
+
+| Ký hiệu | Ý nghĩa |
+|---|---|
+| Q | Độ giống (cosine) giữa vector sở thích `q` và vector mô tả địa điểm (`gemini-embedding-001`, 768 chiều, lưu ở bảng `AttractionEmbeddings`) |
+| H | Độ giống với "hồ sơ sở thích" = trung bình có trọng số vector các nơi người dùng đã quan tâm (bảng `AttractionViews`: tìm đường tới ×2, hỏi trợ lý ×1,5, xem chi tiết ×1; giảm một nửa sau mỗi 30 ngày) |
+| C, D, P | Đúng loại đã chọn; gần vị trí (0 điểm khi ≥ 5 km); độ phổ biến |
+
+```json
+{ "mode": "ai", "query": "kiến trúc Pháp", "basedOn": ["Văn Miếu - Quốc Tử Giám"],
+  "items": [{ "attractionId": 5, "name": "Nhà hát Lớn Hà Nội", "score": 0.82, "reason": "…", "reasons": ["…"], "seen": false, "distanceMeters": null, "...": "…" }] }
+```
+
+**`POST /assistant/chat`**
+
+```json
+// Request
+{ "message": "Lên lịch nửa ngày: Văn Miếu → Hoàng thành → Hồ Tây ngắm hoàng hôn",
+  "history": [{ "role": "user", "text": "…" }, { "role": "assistant", "text": "…", "routes": [{ "from": "…", "to": "…", "fromRef": "attraction:11", "toRef": "attraction:7" }] }],
+  "location": { "latitude": 21.0285, "longitude": 105.8542 } }
+// Response data
+{ "reply": "…tiếng Việt…", "routes": [{ "id": 1, "fromRef": "attraction:11", "toRef": "attraction:7", "from": "…", "to": "…", "preference": "FASTEST", "departureTime": "14:00", "routes": [/* tối đa 3 phương án như /routing/search, bỏ path */] }],
+  "places": [{ "attractionId": 7, "name": "…", "imageUrl": "…", "hoursSummary": "…", "priceFrom": "…", "reason": "…" }],
+  "toolCalls": [{ "name": "plan_itinerary", "ok": true }], "model": "gemini-3.6-flash", "elapsedMs": 6400 }
+```
+
+Công cụ Gemini được gọi (function calling): `find_places`, `plan_route`, `plan_itinerary` (lịch trình nhiều điểm, các chặng tính nối tiếp), `suggest_places`, `get_place_info`, `get_ticket_prices`. Mọi lộ trình, giờ, giá đều do backend tính – AI chỉ hiểu câu hỏi và diễn giải kết quả. Ref địa điểm: `attraction:ID`, `station:ID`, `geo:lat,lng`, `me`.
 
 ## Ghi chú cho cả nhóm
 - JSON dùng **camelCase** (`stationId`, `stationName`...), repository đã alias từ cột PascalCase của SQL Server. Code cũ đọc `StationId` cần đổi sang `stationId`.

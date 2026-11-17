@@ -10,6 +10,7 @@ export function MainLayout() {
   const nav = [
     { to: '/', label: 'Khám phá', end: true },
     { to: '/map', label: 'Bản đồ & Tìm đường' },
+    { to: '/assistant', label: '✨ Trợ lý AI' },
     { to: '/tickets/buy', label: 'Mua vé' },
     ...(user ? [{ to: '/tickets', label: 'Vé của tôi', end: true }, { to: '/history', label: 'Lịch sử' }] : []),
   ];

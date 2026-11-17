@@ -146,5 +146,40 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
   r = await call('GET', '/users/me', null, ct); check('mo khoa -> dung lai binh thuong', r.status === 200, r.status);
   r = await call('PUT', '/admin/users/4', { status: 'LOCKED' }, at); check('admin tu khoa minh -> 400', r.status === 400, r.j?.errorCode);
   r = await call('POST', '/admin/routing/rebuild', null, at); check('rebuild graph', r.status === 200, JSON.stringify(r.j?.data));
+  // Ho Tay: diem den o bo ho (duong Thanh Nien), khong phai giua long ho -> khong phai di bo vong ho ~8 km
+  r = await call('POST', '/routing/search', { origin: { attractionId: 7 }, destination: { attractionId: 15 }, preference: 'FASTEST', departureTime: '16:00' });
+  check('tim duong toi Ho Tay: di bo < 2 km', r.status === 200 && r.j.data.routes[0].walkingDistance < 2000 && r.j.data.routes[0].totalDuration < 45,
+    `${r.j?.data?.routes?.[0]?.totalDuration} phut, di bo ${r.j?.data?.routes?.[0]?.walkingDistance} m`);
+  // ---- AI: goi y theo so thich + tro ly lap lo trinh (Gemini) ----
+  r = await call('GET', '/attractions/suggestions?limit=4');
+  check('goi y AI (khach): 4 dia diem kem ly do', r.status === 200 && r.j.data.items.length === 4 && r.j.data.items.every((x) => x.reason), `mode=${r.j?.data?.mode}`);
+  const aiOn = r.j?.data?.mode === 'ai';
+  r = await call('GET', '/attractions/suggestions?limit=4&q=' + encodeURIComponent('lịch sử, di tích thời phong kiến'), null, tok);
+  const histCats = ['Di tích', 'Di sản', 'Bảo tàng', 'Tôn giáo'];
+  check('goi y theo so thich "lich su": top 3 la di tich / bao tang', r.status === 200 && r.j.data.items.slice(0, 3).every((x) => histCats.includes(x.category)), r.j?.data?.items?.map((x) => x.name).join(', '));
+  check('goi y ca nhan hoa theo lich su xem', r.status === 200 && r.j.data.basedOn.length > 0, r.j?.data?.basedOn?.join(', '));
+  r = await call('GET', '/attractions/suggestions?q=' + encodeURIComponent('x'.repeat(301)));
+  check('so thich qua dai -> 400', r.status === 400, r.j?.errorCode);
+  r = await call('GET', '/assistant/status'); check('tro ly AI can dang nhap -> 401', r.status === 401, r.j?.errorCode);
+  r = await call('POST', '/assistant/chat', { message: '   ' }, tok); check('tro ly: cau hoi rong -> 400', r.status === 400, r.j?.errorCode);
+  if (aiOn) {
+    r = await call('POST', '/assistant/chat', { message: 'Từ Hồ Gươm đến Văn Miếu, đi bộ ít thôi' }, tok);
+    const rs = r.j?.data?.routes?.[0];
+    check('tro ly: hieu cau hoi -> goi bo tim duong', r.status === 200 && rs && rs.fromRef === 'attraction:1' && rs.toRef === 'attraction:11' && rs.preference === 'LEAST_WALKING' && rs.routes.length > 0,
+      `${r.status} ${rs ? `${rs.from} -> ${rs.to} [${rs.preference}]` : r.j?.message} ${r.j?.data?.elapsedMs ?? ''}ms`);
+    check('tro ly: tra loi bang tieng Viet', r.status === 200 && /phút|đi bộ|tuyến|xe/i.test(r.j.data.reply), (r.j?.data?.reply ?? '').slice(0, 80).replace(/\s+/g, ' '));
+    check('tro ly: khong lo ma noi bo (attraction:..) trong cau tra loi', r.status === 200 && !/(attraction|station):\d/.test(r.j.data.reply));
+    r = await call('POST', '/assistant/chat', { message: 'Lên lịch trình: 8 giờ sáng mai mình ở Nhà hát Lớn, đi Nhà tù Hỏa Lò rồi Văn Miếu' }, tok);
+    const legs = r.j?.data?.routes ?? [];
+    const l1 = legs[0], l2 = legs[1];
+    const toMin = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+    check('tro ly: lich trinh nhieu diem -> plan_itinerary, 2 chang dung thu tu, gio noi tiep',
+      r.status === 200 && r.j.data.toolCalls.some((t) => t.name === 'plan_itinerary') && legs.length === 2 &&
+      l1.fromRef === 'attraction:5' && l1.toRef === 'attraction:6' && l2.toRef === 'attraction:11' && l1.departureTime === '08:00' &&
+      toMin(l2.departureTime) >= toMin(l1.departureTime) + l1.routes[0].totalDuration,
+      legs.map((x) => `${x.from} -> ${x.to} ${x.departureTime}`).join(' | ') || r.j?.message);
+    r = await call('POST', '/assistant/chat', { message: 'Viết giúp mình một bài thơ về mùa thu' }, tok);
+    check('tro ly: cau hoi ngoai pham vi -> tu choi, khong goi cong cu', r.status === 200 && r.j.data.routes.length === 0 && r.j.data.toolCalls.length === 0, (r.j?.data?.reply ?? '').slice(0, 80).replace(/\s+/g, ' '));
+  }
   console.log(`\n${pass} PASS, ${fail} FAIL`);
 })().catch((e) => console.log('CRASH', e));

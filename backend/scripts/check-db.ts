@@ -7,7 +7,8 @@ import { getPool, closePool } from '../src/config/database';
 const TABLES = [
   'Users', 'TransportTypes', 'Vehicles', 'Stations', 'Routes', 'RouteStations', 'Trips', 'StopTimes',
   'TouristAttractions', 'AttractionStations', 'TicketTypes', 'FareRules', 'Orders', 'OrderDetails',
-  'Payments', 'Tickets', 'TripHistories',
+  'Payments', 'Tickets', 'TripHistories', 'VerificationCodes', 'AttractionImages', 'PaymentSettings',
+  'AttractionEmbeddings', 'AttractionViews',
 ];
 
 (async () => {

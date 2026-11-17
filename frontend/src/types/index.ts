@@ -453,3 +453,69 @@ export interface Statistics {
   topDestinations: { destination: string; total: number }[];
   recentOrders: { orderId: number; userName: string; totalAmount: number; status: string; createdAt: string }[];
 }
+
+/* ---------- AI: Tro ly lap lo trinh + Goi y dia diem ---------- */
+export interface AssistantRouteSet {
+  id: number;
+  fromRef: string;
+  toRef: string;
+  from: string;
+  to: string;
+  preference: RoutePreference;
+  departureTime: string;
+  routes: RouteResult[];
+}
+
+export interface AssistantPlaceCard {
+  attractionId: number;
+  name: string;
+  category: string | null;
+  imageUrl: string | null;
+  hoursSummary: string | null;
+  priceFrom: string | null;
+  reason?: string;
+}
+
+export interface AssistantReply {
+  reply: string;
+  routes: AssistantRouteSet[];
+  places: AssistantPlaceCard[];
+  toolCalls: { name: string; ok: boolean }[];
+  model: string | null;
+  elapsedMs: number;
+}
+
+export interface AssistantHistoryItem {
+  role: 'user' | 'assistant';
+  text: string;
+  routes?: { from: string; to: string; fromRef?: string; toRef?: string; preference?: string }[];
+}
+
+export interface Suggestion {
+  attractionId: number;
+  name: string;
+  category: string | null;
+  imageUrl: string | null;
+  address: string | null;
+  hoursSummary: string | null;
+  priceFrom: string | null;
+  visitDuration: string | null;
+  latitude: number;
+  longitude: number;
+  highlights: string[];
+  imageCount: number;
+  score: number;
+  reason: string;
+  reasons: string[];
+  distanceMeters?: number;
+  seen: boolean;
+  scoreDetail: Record<string, number>;
+}
+
+export interface SuggestionResult {
+  mode: 'ai' | 'basic';
+  basedOn: string[];
+  query: string | null;
+  items: Suggestion[];
+  notice?: string;
+}

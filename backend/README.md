@@ -7,7 +7,7 @@ Node.js + Express + TypeScript + SQL Server (`mssql`) + JWT. Đây là phần **
 ```bash
 npm install
 copy .env.example .env     # sửa DB_USER, DB_PASSWORD (xem README gốc, mục "Kết nối SQL Server")
-npm run db:check           # kiểm tra kết nối + 17 bảng
+npm run db:check           # kiểm tra kết nối + 22 bảng
 npm run dev                # http://localhost:5000/api/v1
 ```
 
@@ -63,8 +63,9 @@ src/
 │   └── routing.ts                Pipeline: nearest stations → weight theo tiêu chí → Dijkstra → Top 3
 ├── repositories/                 user, transport, station, route, trip, attraction, ticket, order,
 │                                 payment, fareRule, tripHistory, transitNetwork, statistics
-├── services/                     auth, transport, attraction, routing, ticket, order, tripHistory, admin
-├── controllers/                  auth, transport, attraction, routing, ticket, admin
+├── services/                     auth, transport, attraction, routing, ticket, order, tripHistory, admin, recommendation
+│   └── ai/                       gemini.client (gọi Gemini REST), placeSearch (tìm địa điểm theo tên), assistant (trợ lý)
+├── controllers/                  auth, transport, attraction, routing, ticket, admin, assistant
 └── routes/                       *.routes.ts + index.ts (gắn vào /api/v1)
 ```
 
@@ -82,7 +83,6 @@ src/
 
 **3. Toàn vẹn dữ liệu**
 - Thanh toán chạy trong **1 transaction** + khóa dòng `UPDLOCK`: Payment SUCCESS → Order PAID → sinh Tickets. Lỗi giữa chừng → rollback, không bao giờ "trừ tiền mà không có vé", không thanh toán 2 lần.
-- 2 phương thức: **thẻ** (`utils/card.ts`, cổng thử nghiệm, chỉ lưu 4 số cuối) và **chuyển khoản VietQR** (`utils/vietqr.ts`, chuẩn EMVCo/Napas 247 + CRC16). Chuyển khoản ở trạng thái PENDING tới khi admin xác nhận hoặc webhook SePay báo tiền về (`services/payment.service.ts`).
 - Xóa mềm (`Status = 'INACTIVE'`) cho Trạm, Tuyến, Loại vé, Loại phương tiện, Điểm tham quan → không làm vỡ lịch sử đơn hàng/vé.
 - Xóa cứng Phương tiện/Chuyến/Bảng giá; nếu đang được tham chiếu SQL báo lỗi 547 → API trả 409 `CONSTRAINT_VIOLATION`.
 
@@ -109,6 +109,22 @@ src/
   - Có cache, gộp request trùng, giới hạn 6 request đồng thời; máy chủ lỗi → bỏ qua 60 giây và thử máy chủ tiếp theo; tất cả lỗi → ước lượng đường chim bay (`stats.roadGeometry = false`).
   - Bỏ phương án "chỉ đi bộ" dài hơn 1,5 km khi đã có phương án đi xe. Tắt hẳn bằng `ROAD_ROUTING=false`; đổi máy chủ bằng `OSRM_FOOT_URL`, `OSRM_BIKE_URL`, `OSRM_CAR_URL`.
 - Graph seed: 571 trạm → ~1.300 node, ~9.500 cạnh; mỗi lần tìm ~5–35 ms.
+
+**5. Chức năng AI (Gemini)** – `services/ai/*`, `services/recommendation.service.ts`
+- **Trợ lý lập lộ trình** (`POST /assistant/chat`): Gemini dùng *function calling* gọi 6 công cụ của backend (`find_places`, `plan_route`, `plan_itinerary`, `suggest_places`, `get_place_info`, `get_ticket_prices`). AI chỉ hiểu câu hỏi tiếng Việt và diễn giải; lộ trình vẫn do Dijkstra của nhóm tính, giờ / giá lấy từ DB → AI không bịa số tuyến hay giá vé.
+- `plan_itinerary`: lịch trình nhiều điểm, các chặng tính **nối tiếp** (giờ đi chặng sau = giờ đến + thời gian tham quan đọc từ `VisitDuration`), cảnh báo điểm đã đóng cửa theo `HoursSummary`; lời dặn cho AI có giờ mặt trời mọc / lặn trong ngày (`utils/sun.ts`, công thức NOAA).
+- **Gợi ý theo sở thích** (`GET /attractions/suggestions`): vector ngữ nghĩa `gemini-embedding-001` (768 chiều) cho mô tả 20 địa điểm, lưu ở bảng `AttractionEmbeddings` (chỉ tính lại khi nội dung đổi – so `ContentHash`) + lịch sử quan tâm ở `AttractionViews` → điểm `S = 0.5Q + 0.25H + 0.15C + 0.15D + 0.1P`. Mất kết nối Gemini thì tự chuyển sang khớp từ khóa.
+- Ổn định: thử lần lượt các model trong `GEMINI_MODEL` (model quá tải 503 / hết lượt miễn phí 429 / chậm → tự chuyển model khác và tạm bỏ qua model đó, hết lượt theo ngày thì bỏ qua đến khi Google cho gọi lại), chờ tối đa 12 giây mỗi model (lần thử cuối 25 giây), tối đa 6 vòng gọi công cụ, quá 40 giây thì buộc trả lời; giới hạn 40 câu / 10 phút / tài khoản. Không gửi email, số điện thoại, họ tên người dùng cho Gemini.
+- Cấu hình trong `backend/.env.local` (không đưa lên GitHub):
+
+| Biến | Mặc định | Ý nghĩa |
+|---|---|---|
+| `GEMINI_API_KEY` | (trống) | Khóa Gemini API (Google AI Studio). Trống → trợ lý báo chưa cấu hình, gợi ý dùng từ khóa |
+| `GEMINI_MODEL` | `gemini-3-flash-preview,gemini-3.6-flash,gemini-3.5-flash-lite,gemini-flash-latest,gemini-3.8-flash` | Danh sách model thử theo thứ tự |
+| `GEMINI_EMBED_MODEL` / `GEMINI_EMBED_DIMENSIONS` | `gemini-embedding-001` / `768` | Model vector cho gợi ý |
+| `GEMINI_TIMEOUT_MS` | `25000` | Thời gian chờ mỗi lần gọi |
+| `GEMINI_THINKING_LEVEL` | `low` | Mức suy nghĩ của model Gemini 3 (để trống = mặc định của model) |
+| `GEOCODER` | `nominatim` | Tìm địa chỉ ngoài danh sách trạm / địa điểm bằng OpenStreetMap Nominatim; `off` để tắt |
 
 ## Đăng ký có mã xác nhận (Email / SMS)
 

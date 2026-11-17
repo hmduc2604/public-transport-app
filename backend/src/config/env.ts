@@ -79,6 +79,31 @@ export const env = {
     sepayApiKey: process.env.SEPAY_API_KEY || '',
   },
 
+  /**
+   * AI (Google Gemini): Tro ly lap lo trinh + goi y dia diem theo so thich.
+   * Dat khoa trong .env.local:  GEMINI_API_KEY=...   (de trong -> 2 chuc nang AI tat, phan con lai van chay)
+   */
+  ai: {
+    geminiApiKey: (process.env.GEMINI_API_KEY || '').trim(),
+    /**
+     * Thu lan luot, dung model dau tien goi duoc (ghi de bang GEMINI_MODEL=ten1,ten2).
+     * Do thuc te 11/2026: 3.6-flash ~1-2 giay/luot; 3.8-flash hay qua tai (503) nen de cuoi.
+     */
+    models: (process.env.GEMINI_MODEL || 'gemini-3-flash-preview,gemini-3.6-flash,gemini-3.5-flash-lite,gemini-flash-latest,gemini-3.8-flash')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    embeddingModel: (process.env.GEMINI_EMBED_MODEL || 'gemini-embedding-001').trim(),
+    /** So chieu vector embedding (128 - 3072) */
+    embeddingDimensions: Number(process.env.GEMINI_EMBED_DIMENSIONS || 768),
+    baseUrl: (process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com/v1beta').replace(/\/$/, ''),
+    timeoutMs: Number(process.env.GEMINI_TIMEOUT_MS || 25000),
+    /** Muc "suy nghi" cua model Gemini 3+: low = nhanh, du cho goi cong cu (de trong = mac dinh cua model) */
+    thinkingLevel: (process.env.GEMINI_THINKING_LEVEL ?? 'low').trim(),
+    /** Tim dia chi ngoai danh sach tram / dia diem (OpenStreetMap Nominatim) - dat GEOCODER=off de tat */
+    geocoder: (process.env.GEOCODER || 'nominatim').toLowerCase(),
+  },
+
   /** Gui SMS: twilio | esms | speedsms | console (chi de thu) */
   sms: {
     provider: (process.env.SMS_PROVIDER || '').toLowerCase(),

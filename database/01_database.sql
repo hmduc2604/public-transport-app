@@ -1,7 +1,7 @@
 /* =====================================================================
    PUBLIC TRANSPORT MULTI-MODAL - DATABASE SCHEMA (SQL Server)
    File   : 01_database.sql
-   Muc dich: Tao database PublicTransportDBV2 + 20 bang + PK/FK/CHECK/INDEX
+   Muc dich: Tao database PublicTransportDBV2 + 22 bang + PK/FK/CHECK/INDEX
    Chay   : Mo SSMS -> New Query -> F5 (chay ca file)
    Luu y  : Script se XOA database cu (neu co) de tao lai tu dau.
             Neu khong muon mat du lieu, dung 04_upgrade_existing_db.sql
@@ -406,6 +406,36 @@ CREATE TABLE TripHistories (
 GO
 
 /* ---------------------------------------------------------------------
+   18. AttractionEmbeddings  (AI - vector ngu nghia cua dia diem, JSON mang so thuc)
+   --------------------------------------------------------------------- */
+CREATE TABLE AttractionEmbeddings (
+    AttractionId  INT            NOT NULL PRIMARY KEY,
+    Model         VARCHAR(100)   NOT NULL,      -- vd: gemini-embedding-001
+    ContentHash   CHAR(64)       NOT NULL,      -- sha256 noi dung -> noi dung doi thi tinh lai
+    Dimensions    INT            NOT NULL,
+    Vector        NVARCHAR(MAX)  NOT NULL,
+    UpdatedAt     DATETIME2      NOT NULL DEFAULT SYSDATETIME(),
+    CONSTRAINT FK_AttractionEmbeddings_Attractions FOREIGN KEY (AttractionId)
+        REFERENCES TouristAttractions(AttractionId)
+);
+GO
+
+/* ---------------------------------------------------------------------
+   19. AttractionViews  (AI - lich su quan tam: xem chi tiet / tim duong toi / hoi tro ly)
+   --------------------------------------------------------------------- */
+CREATE TABLE AttractionViews (
+    ViewId        BIGINT IDENTITY(1,1) PRIMARY KEY,
+    UserId        INT           NOT NULL,
+    AttractionId  INT           NOT NULL,
+    Source        VARCHAR(20)   NOT NULL DEFAULT 'VIEW',
+    ViewedAt      DATETIME2     NOT NULL DEFAULT SYSDATETIME(),
+    CONSTRAINT FK_AttractionViews_Users       FOREIGN KEY (UserId)       REFERENCES Users(UserId),
+    CONSTRAINT FK_AttractionViews_Attractions FOREIGN KEY (AttractionId) REFERENCES TouristAttractions(AttractionId),
+    CONSTRAINT CK_AttractionViews_Source CHECK (Source IN ('VIEW', 'ROUTE', 'ASSISTANT'))
+);
+GO
+
+/* ---------------------------------------------------------------------
    INDEX - toi uu cac truy van hay dung
    --------------------------------------------------------------------- */
 CREATE INDEX IX_Stations_TransportType       ON Stations(TransportTypeId);
@@ -432,9 +462,11 @@ CREATE INDEX IX_Routes_StartStation          ON Routes(StartStationId);
 CREATE INDEX IX_Routes_EndStation            ON Routes(EndStationId);
 CREATE INDEX IX_FareRules_From               ON FareRules(FromStationId);
 CREATE INDEX IX_FareRules_To                 ON FareRules(ToStationId);
+CREATE INDEX IX_AttractionViews_User          ON AttractionViews(UserId, ViewedAt DESC);
+CREATE INDEX IX_AttractionViews_Attraction    ON AttractionViews(AttractionId);
 GO
 
-/* Kiem tra: phai co 20 bang */
+/* Kiem tra: phai co 22 bang */
 SELECT TABLE_NAME
 FROM INFORMATION_SCHEMA.TABLES
 WHERE TABLE_TYPE = 'BASE TABLE'

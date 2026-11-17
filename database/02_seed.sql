@@ -1046,7 +1046,7 @@ VALUES
  N'Hồ nước tự nhiên lớn nhất nội thành Hà Nội, rộng khoảng 500 ha với chu vi khoảng 17 km, nổi tiếng với cảnh hoàng hôn và nhiều di tích quanh hồ.',
  N'Hồ Tây từng có các tên Đầm Xác Cáo, hồ Kim Ngưu, Lãng Bạc, Dâm Đàm; năm 1573 hồ được đổi tên thành Tây Hồ để kiêng húy vua Lê Thế Tông. Quanh hồ có nhiều di tích nổi tiếng như chùa Trấn Quốc, Phủ Tây Hồ, đền Quán Thánh. Ven hồ là các làng cổ như Nghi Tàm, Quảng An, Nhật Tân với nghề trồng hoa, trồng đào.',
  N'Ngắm hoàng hôn trên đường Thanh Niên|Chùa Trấn Quốc, Phủ Tây Hồ ven hồ|Đạp xe vòng quanh hồ|Ẩm thực: bánh tôm Hồ Tây, ốc nóng|Cà phê ven hồ và phố Trịnh Công Sơn',
- N'Tây Hồ, Hà Nội', 21.055300, 105.818900, N'Danh thắng',
+ N'Đường Thanh Niên, Tây Hồ, Hà Nội', 21.047000, 105.837800, N'Danh thắng',
  N'Khu vực công cộng, mở cửa cả ngày.',
  N'Miễn phí.', 90,
  N'Cả ngày', N'Miễn phí', N'2 – 3 giờ',
@@ -1634,6 +1634,28 @@ INSERT INTO TripHistories (UserId, Origin, Destination, RouteData, StartedAt, Co
  DATEADD(DAY, -3, SYSDATETIME()), DATEADD(MINUTE, 34, DATEADD(DAY, -3, SYSDATETIME())));
 GO
 
+/* ---------------------------------------------------------------------
+   18. AttractionViews - lich su quan tam mau de demo goi y "Danh cho ban" (AI)
+       an@example.com  : hay xem di tich, bao tang (lich su)
+       binh@example.com: hay xem ho, pho, cho (thu gian, am thuc)
+   --------------------------------------------------------------------- */
+INSERT INTO AttractionViews (UserId, AttractionId, Source, ViewedAt)
+SELECT u.UserId, a.AttractionId, v.Source, DATEADD(DAY, -v.DaysAgo, SYSDATETIME())
+FROM (VALUES
+    ('an@example.com',   N'Văn Miếu - Quốc Tử Giám',  'VIEW',   2),
+    ('an@example.com',   N'Hoàng thành Thăng Long',    'ROUTE',  5),
+    ('an@example.com',   N'Bảo tàng Lịch sử Quốc gia', 'VIEW',  10),
+    ('an@example.com',   N'Nhà tù Hỏa Lò',             'VIEW',  12),
+    ('binh@example.com', N'Hồ Tây',                    'VIEW',   1),
+    ('binh@example.com', N'Phố Tạ Hiện',               'ROUTE',  3),
+    ('binh@example.com', N'Cầu Long Biên',             'VIEW',   6),
+    ('binh@example.com', N'Chợ Đồng Xuân',             'VIEW',   8)
+) v(Email, Name, Source, DaysAgo)
+JOIN Users u ON u.Email = v.Email
+JOIN TouristAttractions a ON a.Name = v.Name
+WHERE NOT EXISTS (SELECT 1 FROM AttractionViews x WHERE x.UserId = u.UserId);
+GO
+
 /* Kiem tra nhanh so luong ban ghi */
 SELECT 'Users' AS TableName, COUNT(*) AS Total FROM Users
 UNION ALL SELECT 'TransportTypes', COUNT(*) FROM TransportTypes
@@ -1651,5 +1673,6 @@ UNION ALL SELECT 'Orders', COUNT(*) FROM Orders
 UNION ALL SELECT 'OrderDetails', COUNT(*) FROM OrderDetails
 UNION ALL SELECT 'Payments', COUNT(*) FROM Payments
 UNION ALL SELECT 'Tickets', COUNT(*) FROM Tickets
-UNION ALL SELECT 'TripHistories', COUNT(*) FROM TripHistories;
+UNION ALL SELECT 'TripHistories', COUNT(*) FROM TripHistories
+UNION ALL SELECT 'AttractionViews', COUNT(*) FROM AttractionViews;
 GO

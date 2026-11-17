@@ -12,10 +12,12 @@ React + TypeScript + Leaflet  ──REST /api/v1 + JWT──>  Node.js + Express
 ```
 public-transport-app/
 ├── database/            ← Script SQL Server
-│   ├── 01_database.sql          Tạo DB PublicTransportDBV2 + 17 bảng + index
+│   ├── 01_database.sql          Tạo DB PublicTransportDBV2 + 22 bảng + index
 │   ├── 02_seed.sql              Dữ liệu mẫu: 571 trạm vị trí thật, 22 tuyến (20 bus + Metro 2A, 3.1), 20 điểm tham quan...
 │   ├── 03_test_queries.sql      Truy vấn kiểm thử (nearby, join, thống kê)
-│   └── 04_upgrade_existing_db.sql  Dùng khi ĐÃ CÓ DB cũ, không muốn xóa dữ liệu
+│   ├── 04_upgrade_existing_db.sql  Dùng khi ĐÃ CÓ DB cũ, không muốn xóa dữ liệu
+│   ├── 05 … 11_*.sql            Nâng cấp DB đang chạy (ảnh, chi tiết địa điểm, xác nhận đăng ký, thanh toán, sửa dữ liệu, AI) – chạy bằng upgrade-db.bat
+│   └── 99_cleanup_test_data.sql Dọn trạm / tuyến do api-test tạo
 ├── backend/             ← API (tách riêng, xem backend/README.md)
 ├── frontend/            ← Giao diện React
 └── docs/API.md          ← API contract đầy đủ cho cả nhóm
@@ -37,9 +39,9 @@ Máy chưa cài SQL Server nên dùng SQL Server 2022 trong Docker (container `p
 |---|---|
 | `run-all.bat` | Bật Docker → bật SQL Server → tạo DB lần đầu → ghi `backend/.env` → `npm install` → chạy backend (cửa sổ "HanoiGo Backend") + frontend ("HanoiGo Frontend") → mở http://localhost:5173 |
 | `reset-db.bat` | Xóa container và tạo lại database + dữ liệu mẫu từ đầu (sau đó tắt/mở lại cửa sổ backend để băm lại mật khẩu seed) |
-| `api-test.bat` | Chạy 85 test API toàn luồng (gồm các trường hợp lỗi / bảo mật), kết quả ở `api-test.log` |
+| `api-test.bat` | Chạy 98 test API toàn luồng (gồm các trường hợp lỗi / bảo mật và chức năng AI), kết quả ở `api-test.log` |
 | `stability-test.bat` | Kiểm tra độ ổn định: chịu tải đồng thời (≈ 3.000 request), thanh toán trùng cùng lúc, và **tắt SQL Server 10 giây** rồi bật lại để xem backend có tự phục hồi không. Chỉ chạy trên máy thử nghiệm; kết quả ở `stability-test.log` |
-| `upgrade-db.bat` | Cập nhật database đang chạy lên bản mới nhất (chạy lần lượt `05` → `10`, không xóa dữ liệu, chạy lại nhiều lần vẫn an toàn) |
+| `upgrade-db.bat` | Cập nhật database đang chạy lên bản mới nhất (chạy lần lượt `05` → `11`, không xóa dữ liệu, chạy lại nhiều lần vẫn an toàn) |
 | `install-deps.bat` | Cài / cập nhật thư viện cho backend + frontend, xong tự khởi động lại 2 cửa sổ |
 | `restart-app.bat` | Khởi động lại backend + frontend (khi backend bị treo hoặc vừa đổi thư viện) |
 
@@ -68,7 +70,7 @@ Thư viện `mssql` dùng **SQL Server Authentication** qua TCP:
 cd backend
 npm install
 copy .env.example .env      # sửa DB_USER / DB_PASSWORD
-npm run db:check            # kiểm tra kết nối + đếm bản ghi 17 bảng
+npm run db:check            # kiểm tra kết nối + đếm bản ghi 22 bảng
 npm run test:routing        # test thuật toán tìm đường (không cần DB)
 npm run dev                 # http://localhost:5000/api/v1
 ```
@@ -100,6 +102,8 @@ Vite đã cấu hình proxy `/api → http://localhost:5000`, nên không cần 
 6. **Mua vé cho lộ trình** → vé lượt được chọn sẵn → **Thanh toán** bằng thẻ (thẻ thử nghiệm `4242 4242 4242 4242`) hoặc **chuyển khoản QR** → **QR e-ticket**.
 7. Đăng nhập `admin@example.com` → Dashboard thống kê → Vé & Soát vé: dán nội dung QR → vé lượt chuyển **Đã dùng**.
 8. Admin thêm trạm/tuyến mới → graph tìm đường tự xây lại → tìm đường thấy tuyến mới.
+9. **Trợ lý AI** (menu ✨ Trợ lý AI): gõ "Lên lịch nửa ngày: Văn Miếu → Hoàng thành Thăng Long → Hồ Tây ngắm hoàng hôn" → trợ lý trả lịch trình có giờ đến / giờ rời từng nơi, mỗi chặng 1 thẻ lộ trình → bấm **Xem trên bản đồ**. Hỏi tiếp "đi chậm thôi, ít đi bộ" để trợ lý tìm lại theo tiêu chí khác.
+10. Trang chủ → **Gợi ý cho bạn**: gõ sở thích ("kiến trúc Pháp, chụp ảnh buổi tối") → 4 địa điểm hợp nhất kèm lý do; đăng nhập `an@example.com` thì có thêm dòng "Dành cho bạn, dựa trên: …" (lịch sử đã xem / đã tìm đường).
 
 ## Nguồn dữ liệu vị trí trạm
 
@@ -177,6 +181,23 @@ TWILIO_FROM=+1xxxxxxxxxx
 ```
 
 Kiểm tra: mở `http://localhost:5000/api/v1/auth/verification-channels` → `"email": true` / `"sms": true` là đã sẵn sàng.
+
+## Chức năng AI: trợ lý lập lộ trình và gợi ý theo sở thích
+
+Dùng Google **Gemini API**. Khóa đặt trong `backend/.env.local` (file này **không** được đưa lên GitHub):
+
+```
+GEMINI_API_KEY=...khóa lấy ở https://aistudio.google.com/apikey...
+```
+
+Sau đó chạy `upgrade-db.bat` (có `11_ai_features.sql`: bảng `AttractionEmbeddings`, `AttractionViews`) và `restart-app.bat`.
+
+| Chức năng | Ở đâu | Cách hoạt động |
+|---|---|---|
+| **Trợ lý lập lộ trình bằng tiếng Việt** | Menu **✨ Trợ lý AI** (`/assistant`, cần đăng nhập) | Gõ hoặc nói (nút micro) câu tự nhiên: "Từ Hồ Gươm đến Văn Miếu, đi bộ ít thôi", "Sáng mai 8h đi Hỏa Lò rồi Văn Miếu", "mình đang ở đây, muốn đi Lăng Bác" (bật **Dùng vị trí của tôi**). Gemini hiểu câu hỏi rồi gọi bộ tìm đường, dữ liệu địa điểm, bảng giá vé của hệ thống; trả lời tiếng Việt kèm **thẻ lộ trình** (3 phương án, mở trên bản đồ) và **thẻ địa điểm**. Lịch trình nhiều điểm được tính nối tiếp từng chặng, có cảnh báo nơi đã đóng cửa và giờ mặt trời lặn. Nhớ ngữ cảnh trong cuộc trò chuyện ("còn cách nào rẻ hơn không?"). |
+| **Gợi ý địa điểm theo sở thích** | Trang chủ → **Gợi ý cho bạn** | Gõ sở thích bất kỳ hoặc chọn nhanh (Lịch sử, Kiến trúc Pháp, Chụp ảnh, Ẩm thực…), có thể bấm **📍 Gần tôi**. Hệ thống so khớp **ngữ nghĩa** (vector Gemini) giữa sở thích và mô tả 20 địa điểm, cộng thêm lịch sử các nơi bạn đã xem / tìm đường tới, khoảng cách và độ phổ biến; mỗi gợi ý có lý do cụ thể. Không có khóa hoặc mất mạng → tự chuyển sang khớp từ khóa. |
+
+Chi tiết kỹ thuật: `backend/README.md` (mục 5), API: `docs/API.md` (mục 7). Khóa đã từng gửi qua chat / email nên **tạo khóa mới sau khi bảo vệ** và thay vào `.env.local`.
 
 ## Yêu cầu đăng nhập khi xem chi tiết
 
@@ -271,4 +292,18 @@ Gia cố thêm: bắt sự kiện lỗi của connection pool (`config/database.
 | Tải đồng thời (`stability-test.bat`) | 2.000 request đọc p95 277 ms; 200 lần tìm đường p95 889 ms; 5 lần thanh toán cùng lúc chỉ 1 lần trừ tiền |
 | Tắt SQL Server 10 giây | Backend không sập, trả 503; tự kết nối lại sau 11,5 giây |
 
-`api-test.bat` nay tự dọn trạm / tuyến thử (mã `BUS-TEST…`, `BUSTEST…`) bằng `database/99_cleanup_test_data.sql` sau khi chạy, để trang quản trị không còn dữ liệu rác.
+`api-test.bat` nay tự dọn trạm / tuyến thử (mã `BUS-TEST…`, `BUSTEST…`) bằng `database/99_cleanup_test_data.sql` sau khi chạy, để trang quản trị không còn dữ liệu rác. Từ lần 4, file này còn đưa **lịch sử quan tâm** của `an@` / `binh@` về dữ liệu mẫu (các lần thử trợ lý AI, tìm đường làm mục "Dành cho bạn" lệch) – nên chạy `api-test.bat` một lần trước buổi bảo vệ.
+
+## Kiểm tra lần 4 (17/11/2026): chức năng AI
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Trợ lý: hỏi đường 1 chặng, nhiều điểm, theo tiêu chí, hỏi tiếp theo ngữ cảnh, giá vé, gợi ý, câu ngoài phạm vi | Đúng công cụ, giờ / giá khớp thẻ lộ trình, từ chối câu ngoài phạm vi |
+| Lịch trình nhiều điểm | Thêm công cụ `plan_itinerary`: các chặng tính nối tiếp, cảnh báo nơi đã đóng cửa, có giờ mặt trời lặn; thẻ lộ trình đúng thứ tự chặng |
+| Gemini quá tải / hết lượt miễn phí | Tự chuyển model (`gemini-3-flash-preview` → `gemini-3.6-flash` → `gemini-3.5-flash-lite`…), không lỗi với người dùng |
+| `api-test.bat` | 98/98 (thêm 12 test cho AI và tìm đường tới Hồ Tây) |
+| Type-check backend + frontend | 0 lỗi |
+
+**Lỗi dữ liệu đã sửa**: tọa độ **Hồ Tây** nằm giữa lòng hồ nên tìm đường tới Hồ Tây phải đi bộ vòng hồ ~8,3 km (133 phút). Nay đặt ở bờ hồ trên đường Thanh Niên (điểm ngắm hoàng hôn): Hoàng thành → Hồ Tây còn 20 phút. Database đang chạy: `upgrade-db.bat` (có trong `09_data_fixes.sql`).
+
+**Backend**: ghi log lỗi không bắt được (`uncaughtException`) và từng lượt gọi công cụ của trợ lý (`[AI] round …` trong `backend.log`) để dễ tìm nguyên nhân khi có sự cố.
