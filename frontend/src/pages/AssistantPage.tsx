@@ -225,11 +225,11 @@ function AiPlaces({ places }: { places: AssistantPlaceCard[] }) {
       {places.map((p) => (
         <div key={p.attractionId} className="ai-place">
           <Link to={`/attractions/${p.attractionId}`} className="ai-place-img" aria-label={p.name}>
-            {p.imageUrl ? <img src={p.imageUrl} alt="" loading="lazy" /> : <span>{categoryIcon(p.category)}</span>}
+            {p.imageUrl ? <img src={p.imageUrl} alt="" loading="lazy" /> : <span>{categoryIcon(p.category, p.name)}</span>}
           </Link>
           <div className="ai-place-body">
             <div className="muted small">
-              {categoryIcon(p.category)} {p.category ?? 'Địa điểm'}
+              {categoryIcon(p.category, p.name)} {p.category ?? 'Địa điểm'}
             </div>
             <Link to={`/attractions/${p.attractionId}`} className="ai-place-name clamp-1">
               {p.name}

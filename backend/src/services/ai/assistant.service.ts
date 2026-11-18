@@ -93,7 +93,7 @@ const TOOLS = [
         name: 'find_places',
         description:
           'Tìm địa điểm, trạm xe buýt / ga Metro / trạm xe đạp, xe điện, hoặc địa chỉ ở Hà Nội theo tên. Trả về danh sách kèm ref để dùng cho plan_route. ' +
-          'Không cần gọi với 20 địa điểm tham quan đã có ref trong lời dặn.',
+          'Không cần gọi với các địa điểm tham quan đã có ref trong lời dặn.',
         parameters: {
           type: 'object',
           properties: { query: { type: 'string', description: 'Tên hoặc địa chỉ, ví dụ "ga Cát Linh", "Đại học Bách khoa Hà Nội", "số 1 Tràng Tiền"' } },

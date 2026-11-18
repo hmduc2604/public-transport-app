@@ -195,7 +195,7 @@ export function MapView({
           <Marker
             key={`a-${a.attractionId}`}
             position={[a.latitude, a.longitude]}
-            icon={pinIcon(`attr-${a.category}`, categoryIcon(a.category), '#ffffff', 30, 'pin-attraction')}
+            icon={pinIcon(`attr-${categoryIcon(a.category, a.name)}`, categoryIcon(a.category, a.name), '#ffffff', 30, 'pin-attraction')}
           >
             <Popup>
               <div className="popup">

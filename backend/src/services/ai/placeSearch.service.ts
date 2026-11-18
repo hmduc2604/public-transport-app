@@ -1,6 +1,6 @@
 /**
  * Tim dia diem theo ten cho Tro ly AI: "Hồ Gươm", "Lăng Bác", "ga Cát Linh", "Đại học Bách khoa"...
- *   1. 20 dia diem tham quan (kem ten goi quen thuoc) + 571 tram trong database - so khop khong dau
+ *   1. Cac dia diem tham quan (kem ten goi quen thuoc) + 571 tram trong database - so khop khong dau
  *   2. Khong thay -> tra dia chi bang OpenStreetMap Nominatim (gioi han trong vung Ha Noi he thong ho tro)
  * Moi ket qua co "ref" de truyen cho cong cu tim duong:  attraction:ID | station:ID | geo:lat,lng
  */
@@ -59,7 +59,114 @@ const ALIASES: Record<string, string> = {
   'bao tang lich su': 'Bảo tàng Lịch sử Quốc gia',
   'pho sach': 'Phố sách Hà Nội',
   'ngoc son': 'Đền Ngọc Sơn',
+  // 14 dia diem bo sung (12_more_attractions.sql)
+  'nha tho lon': 'Nhà thờ Lớn Hà Nội',
+  'nha tho chinh toa': 'Nhà thờ Lớn Hà Nội',
+  'nha tho thanh giuse': 'Nhà thờ Lớn Hà Nội',
+  'bao tang ho chi minh': 'Bảo tàng Hồ Chí Minh',
+  'bao tang bac ho': 'Bảo tàng Hồ Chí Minh',
+  'phu chu tich': 'Khu di tích Phủ Chủ tịch',
+  'nha san bac': 'Khu di tích Phủ Chủ tịch',
+  'ao ca bac': 'Khu di tích Phủ Chủ tịch',
+  'pho sach dinh le': 'Phố sách Đinh Lễ',
+  'dinh le': 'Phố sách Đinh Lễ',
+  'truc bach': 'Hồ Trúc Bạch',
+  'cong vien thong nhat': 'Công viên Thống Nhất',
+  'ho bay mau': 'Công viên Thống Nhất',
+  'thu le': 'Công viên Thủ Lệ',
+  'vuon thu': 'Công viên Thủ Lệ',
+  'vuon bach thu': 'Công viên Thủ Lệ',
+  'bao tang thien nhien': 'Bảo tàng Thiên nhiên Việt Nam',
+  'cong vien nuoc': 'Công viên nước Hồ Tây',
+  'thuy cung times city': 'Thủy cung Times City',
+  'times city': 'Thủy cung Times City',
+  'vinpearl aquarium': 'Thủy cung Times City',
+  'keangnam': 'Landmark 72 – Đài quan sát Sky72',
+  'landmark 72': 'Landmark 72 – Đài quan sát Sky72',
+  'sky72': 'Landmark 72 – Đài quan sát Sky72',
+  'sky 72': 'Landmark 72 – Đài quan sát Sky72',
+  'lotte mall tay ho': 'Lotte Mall Tây Hồ',
+  'lotte tay ho': 'Lotte Mall Tây Hồ',
+  'lotte mall west lake': 'Lotte Mall Tây Hồ',
+  'lotte west lake': 'Lotte Mall Tây Hồ',
+  'lotte world aquarium': 'Lotte Mall Tây Hồ',
+  'vincom ba trieu': 'Vincom Center Bà Triệu',
+  'vincom center ba trieu': 'Vincom Center Bà Triệu',
+  'vincom city towers': 'Vincom Center Bà Triệu',
+  'royal city': 'Vincom Mega Mall Royal City',
+  'vincom royal city': 'Vincom Mega Mall Royal City',
+  'mega mall royal city': 'Vincom Mega Mall Royal City',
+  // 16 dia diem bo sung dot 3 (13_more_attractions_2.sql)
+  'bao tang phu nu': 'Bảo tàng Phụ nữ Việt Nam',
+  'women s museum': 'Bảo tàng Phụ nữ Việt Nam',
+  'womens museum': 'Bảo tàng Phụ nữ Việt Nam',
+  'den quan thanh': 'Đền Quán Thánh',
+  'tran vu quan': 'Đền Quán Thánh',
+  'quan thanh temple': 'Đền Quán Thánh',
+  'tran bac': 'Đền Quán Thánh',
+  'den bach ma': 'Đền Bạch Mã',
+  'white horse temple': 'Đền Bạch Mã',
+  'chua quan su': 'Chùa Quán Sứ',
+  'quan su pagoda': 'Chùa Quán Sứ',
+  'phu tay ho': 'Phủ Tây Hồ',
+  'phu mau tay ho': 'Phủ Tây Hồ',
+  'tay ho temple': 'Phủ Tây Hồ',
+  '87 ma may': 'Ngôi nhà di sản 87 Mã Mây',
+  'nha co ma may': 'Ngôi nhà di sản 87 Mã Mây',
+  'ngoi nha di san': 'Ngôi nhà di sản 87 Mã Mây',
+  'nha di san ma may': 'Ngôi nhà di sản 87 Mã Mây',
+  'ma may': 'Ngôi nhà di sản 87 Mã Mây',
+  'o quan chuong': 'Ô Quan Chưởng',
+  'dong ha mon': 'Ô Quan Chưởng',
+  'cot co ha noi': 'Cột cờ Hà Nội',
+  'cot co': 'Cột cờ Hà Nội',
+  'ky dai': 'Cột cờ Hà Nội',
+  'flag tower': 'Cột cờ Hà Nội',
+  'ho huu tiep': 'Hồ Hữu Tiệp (xác máy bay B-52)',
+  'huu tiep': 'Hồ Hữu Tiệp (xác máy bay B-52)',
+  'ho b 52': 'Hồ Hữu Tiệp (xác máy bay B-52)',
+  'ho b52': 'Hồ Hữu Tiệp (xác máy bay B-52)',
+  'xac b 52': 'Hồ Hữu Tiệp (xác máy bay B-52)',
+  'xac b52': 'Hồ Hữu Tiệp (xác máy bay B-52)',
+  'xac may bay b 52': 'Hồ Hữu Tiệp (xác máy bay B-52)',
+  'xac may bay b52': 'Hồ Hữu Tiệp (xác máy bay B-52)',
+  'b52 lake': 'Hồ Hữu Tiệp (xác máy bay B-52)',
+  'b 52 lake': 'Hồ Hữu Tiệp (xác máy bay B-52)',
+  'bao tang chien thang b 52': 'Bảo tàng Chiến thắng B-52',
+  'bao tang chien thang b52': 'Bảo tàng Chiến thắng B-52',
+  'bao tang b 52': 'Bảo tàng Chiến thắng B-52',
+  'bao tang b52': 'Bảo tàng Chiến thắng B-52',
+  'b52 museum': 'Bảo tàng Chiến thắng B-52',
+  'b 52 museum': 'Bảo tàng Chiến thắng B-52',
+  'bao tang lich su quan su': 'Bảo tàng Lịch sử Quân sự Việt Nam',
+  'bao tang quan su': 'Bảo tàng Lịch sử Quân sự Việt Nam',
+  'bao tang quan doi': 'Bảo tàng Lịch sử Quân sự Việt Nam',
+  'military history museum': 'Bảo tàng Lịch sử Quân sự Việt Nam',
+  'military museum': 'Bảo tàng Lịch sử Quân sự Việt Nam',
+  'bao tang phong khong': 'Bảo tàng Phòng không – Không quân',
+  'bao tang khong quan': 'Bảo tàng Phòng không – Không quân',
+  'phong khong khong quan': 'Bảo tàng Phòng không – Không quân',
+  'air force museum': 'Bảo tàng Phòng không – Không quân',
+  'bao tang ha noi': 'Bảo tàng Hà Nội',
+  'hanoi museum': 'Bảo tàng Hà Nội',
+  'kim tu thap nguoc': 'Bảo tàng Hà Nội',
+  'con duong gom su': 'Con đường gốm sứ sông Hồng',
+  'duong gom su': 'Con đường gốm sứ sông Hồng',
+  'gom su song hong': 'Con đường gốm sứ sông Hồng',
+  'tranh gom su': 'Con đường gốm sứ sông Hồng',
+  'ceramic mosaic': 'Con đường gốm sứ sông Hồng',
+  'vuon bach thao': 'Vườn Bách Thảo Hà Nội',
+  'cong vien bach thao': 'Vườn Bách Thảo Hà Nội',
+  'bach thao': 'Vườn Bách Thảo Hà Nội',
+  'botanical garden': 'Vườn Bách Thảo Hà Nội',
+  'rap xiec trung uong': 'Rạp xiếc Trung ương',
+  'rap xiec': 'Rạp xiếc Trung ương',
+  'lien doan xiec': 'Rạp xiếc Trung ương',
+  'xiec trung uong': 'Rạp xiếc Trung ương',
+  'circus': 'Rạp xiếc Trung ương',
 };
+
+const ALIAS_ENTRIES = Object.entries(ALIASES).sort((a, b) => b[0].length - a[0].length);
 
 const STOP_WORDS = new Set(['tram', 'xe', 'buyt', 'bus', 'ga', 'pho', 'duong', 'so', 'ha', 'noi', 'cua', 'o', 'tai', 'den', 'tu']);
 
@@ -139,7 +246,8 @@ export const placeSearchService = {
     const { attractions, stations } = await getCatalog();
     const out: PlaceCandidate[] = [];
 
-    const aliasName = Object.entries(ALIASES).find(([k]) => q.includes(k))?.[1];
+    // Khop ten goi quen thuoc dai nhat truoc ("pho sach dinh le" truoc "pho sach")
+    const aliasName = ALIAS_ENTRIES.find(([k]) => q.includes(k))?.[1];
     for (const a of attractions) {
       let s = similarity(q, fold(a.name));
       if (aliasName && a.name === aliasName) s = Math.max(s, 0.95);
@@ -177,7 +285,7 @@ export const placeSearchService = {
     return out.slice(0, limit);
   },
 
-  /** Danh sach 20 dia diem (ref + ten) dua vao loi dan cho AI */
+  /** Danh sach dia diem tham quan (ref + ten) dua vao loi dan cho AI */
   async attractionCatalog(): Promise<{ ref: string; name: string; category: string | null }[]> {
     const { attractions } = await getCatalog();
     return attractions.map((a) => ({ ref: `attraction:${a.attractionId}`, name: a.name, category: a.category }));

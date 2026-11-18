@@ -135,18 +135,18 @@ async function queryVector(q: string): Promise<number[]> {
 
 /* ---------------- Che do co ban: tu khoa + tu dong nghia ---------------- */
 const SYNONYMS: Record<string, string[]> = {
-  'lich su': ['di tich', 'bao tang', 'hoang thanh', 'lich su', 'chien tranh', 'trieu', 'van mieu', 'nha tu'],
-  'van hoa': ['van hoa', 'truyen thong', 'dan toc', 'nghe thuat', 'mua roi', 'sach'],
-  'kien truc': ['kien truc', 'phap', 'nha hat', 'cau', 'dong duong', 'thap'],
+  'lich su': ['di tich', 'bao tang', 'hoang thanh', 'lich su', 'chien tranh', 'trieu', 'van mieu', 'nha tu', 'quan su', 'khang chien', 'cua o'],
+  'van hoa': ['van hoa', 'truyen thong', 'dan toc', 'nghe thuat', 'mua roi', 'sach', 'gom', 'nha co', 'phu nu'],
+  'kien truc': ['kien truc', 'phap', 'nha hat', 'cau', 'dong duong', 'thap', 'gothic', 'nha tho', 'toa nha'],
   'chup anh': ['chup anh', 'song ao', 'canh', 'hoang hon', 'kien truc', 'ho'],
   'am thuc': ['an', 'am thuc', 'bia', 'cho', 'quan', 'do nuong', 'pho'],
-  'thien nhien': ['ho', 'cay', 'xanh', 'hoang hon', 'song', 'mat nuoc'],
-  'tam linh': ['chua', 'den', 'phat', 'tam linh', 'tho'],
+  'thien nhien': ['ho', 'cay', 'xanh', 'hoang hon', 'song', 'mat nuoc', 'cong vien', 'vuon thu', 'dong vat'],
+  'tam linh': ['chua', 'den', 'phat', 'tam linh', 'tho', 'nha tho', 'thanh duong', 'thanh mau', 'tu tran'],
   've dem': ['dem', 'bia', 'pho', 'den', 'toi'],
-  'tre em': ['tre em', 'mua roi', 'bao tang', 'gia dinh'],
-  'mua sam': ['cho', 'mua', 'hang', 'sach'],
+  'tre em': ['tre em', 'mua roi', 'bao tang', 'gia dinh', 'vui choi', 'cong vien', 'thuy cung', 'vuon thu', 'khung long', 'tro choi', 'xiec', 'may bay'],
+  'mua sam': ['cho', 'mua', 'hang', 'sach', 'trung tam thuong mai', 'cua hang', 'mall'],
   'yen tinh': ['yen tinh', 'ho', 'chua', 'vuon', 'thu thai'],
-  'nghe thuat': ['nghe thuat', 'my thuat', 'mua roi', 'nha hat', 'tranh'],
+  'nghe thuat': ['nghe thuat', 'my thuat', 'mua roi', 'nha hat', 'tranh', 'xiec', 'gom'],
 };
 
 function keywordTerms(q: string): string[] {

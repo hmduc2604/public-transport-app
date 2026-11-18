@@ -6,6 +6,10 @@ async function call(method, path, body, token) {
   const j = await r.json().catch(() => null);
   return { status: r.status, j };
 }
+// Dia diem chua co anh bo suu tap (hien chua co dia diem nao)
+const NO_FREE_PHOTOS = [];
+// Dia diem chi tim duoc it anh giay phep tu do tren Wikimedia Commons: so anh bo suu tap toi thieu
+const FEW_PHOTOS = { 'Phố sách Đinh Lễ': 4, 'Công viên nước Hồ Tây': 2, 'Rạp xiếc Trung ương': 1 };
 function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${cond ? 'PASS' : 'FAIL'}  ${name} ${info}`); }
 (async () => {
   const SUF = Date.now().toString(36).toUpperCase(); // ma test khong trung giua cac lan chay
@@ -30,7 +34,7 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
   r = await call('GET', '/stations/1'); check('station detail', r.status === 200 && r.j.data.routes.length > 0, `routes=${r.j?.data?.routes?.length}`);
   r = await call('GET', '/routes/1'); check('route detail (tuyen 23: 34 diem dung)', r.status === 200 && r.j.data.stations.length === 34, r.j?.data?.stations?.length);
   r = await call('GET', '/routes/1/trips?upcoming=true'); check('route trips', r.status === 200, `trips=${r.j?.data?.length}`);
-  r = await call('GET', '/attractions?category=' + encodeURIComponent('Bảo tàng')); check('attractions filter', r.j?.data?.length === 3, r.j?.data?.length);
+  r = await call('GET', '/attractions?category=' + encodeURIComponent('Bảo tàng')); check('attractions filter (10 bao tang)', r.j?.data?.length === 10, r.j?.data?.length);
   r = await call('GET', '/attractions/11'); check('attraction detail', r.status === 200 && Array.isArray(r.j.data.highlights), r.j?.data?.name);
   { // Trang chi tiet: thong tin nhanh, moc lich su, tuyen dung tai tram gan, dia diem lan can
     const d = r.j?.data;
@@ -38,14 +42,16 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
     const na = d?.nearbyAttractions ?? [];
     check('chi tiet: toi da 4 dia diem lan can trong 3 km, gan nhat truoc', na.length > 0 && na.length <= 4 && na.every((n, i) => n.attractionId !== 11 && n.distanceMeters <= 3000 && n.walkingMinutes >= 1 && (i === 0 || na[i - 1].distanceMeters <= n.distanceMeters)), na.map((n) => `${n.name} ${n.distanceMeters}m`).join(', '));
     check('chi tiet: tram gan kem cac tuyen dung tai tram', d?.nearbyStations?.length > 0 && d.nearbyStations.every((s) => Array.isArray(s.routes)) && d.nearbyStations.some((s) => s.routes.length > 0), d?.nearbyStations?.map((s) => `${s.stationName}[${s.routes.map((x) => x.routeCode).join(' ')}]`).join(', '));
-    // Du lieu day du: ca 20 dia diem deu co >= 4 thong tin nhanh va >= 2 moc lich su
+    // Du lieu day du: ca 50 dia diem deu co anh dai dien, >= 4 thong tin nhanh, >= 2 moc lich su, toa do + tram gan;
+    // co bo suu tap anh thi >= 5 anh (tru vai dia diem it / chua co anh giay phep tu do)
     r = await call('GET', '/attractions');
     const thin = [];
     for (const it of r.j?.data ?? []) {
       const x = (await call('GET', `/attractions/${it.attractionId}`)).j?.data;
-      if (!(x?.facts?.length >= 4 && x?.timeline?.length >= 2 && x?.images?.length >= 5)) thin.push(`${it.name} f=${x?.facts?.length} t=${x?.timeline?.length} i=${x?.images?.length}`);
+      const okImages = x?.images?.length >= (FEW_PHOTOS[it.name] ?? 5) || (x?.images?.length === 0 && NO_FREE_PHOTOS.includes(it.name));
+      if (!(x?.imageUrl && x?.facts?.length >= 4 && x?.timeline?.length >= 2 && okImages && x?.nearbyStations?.length > 0)) thin.push(`${it.name} hero=${x?.imageUrl ? 1 : 0} f=${x?.facts?.length} t=${x?.timeline?.length} i=${x?.images?.length} st=${x?.nearbyStations?.length}`);
     }
-    check('20 dia diem: du thong tin nhanh, moc lich su, 5 anh', (r.j?.data?.length ?? 0) === 20 && thin.length === 0, thin.join('; ') || `${r.j?.data?.length} dia diem`);
+    check('50 dia diem: du anh dai dien, thong tin nhanh, moc lich su, anh, tram gan', (r.j?.data?.length ?? 0) === 50 && thin.length === 0, thin.join('; ') || `${r.j?.data?.length} dia diem`);
   }
   r = await call('GET', '/attractions/recommend?categories=' + encodeURIComponent('Di tích') + '&lat=21.0285&lng=105.8542'); check('recommend', r.status === 200, r.j?.data?.[0]?.name);
   for (const pref of ['FASTEST', 'CHEAPEST', 'LEAST_WALKING', 'FEWEST_TRANSFERS']) {

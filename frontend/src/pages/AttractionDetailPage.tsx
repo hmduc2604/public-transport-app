@@ -241,7 +241,7 @@ function NearbyCard({ n }: { n: NearbyAttraction }) {
   return (
     <Link to={`/attractions/${n.attractionId}`} className="nearby-card">
       <div className="nearby-media">
-        {n.imageUrl ? <img src={n.imageUrl} alt="" loading="lazy" /> : <span className="nearby-ph">{categoryIcon(n.category)}</span>}
+        {n.imageUrl ? <img src={n.imageUrl} alt="" loading="lazy" /> : <span className="nearby-ph">{categoryIcon(n.category, n.name)}</span>}
       </div>
       <div className="nearby-body">
         <span className="nearby-cat">{n.category}</span>
@@ -302,7 +302,13 @@ export default function AttractionDetailPage() {
     <article className="place">
       {/* ---------- Anh dau trang ---------- */}
       <header className="place-hero">
-        {a.imageUrl ? <img className="place-hero-img" src={a.imageUrl} alt={a.name} /> : <div className="place-hero-img place-hero-ph" />}
+        {a.imageUrl ? (
+          <img className="place-hero-img" src={a.imageUrl} alt={a.name} />
+        ) : (
+          <div className="place-hero-img place-hero-ph" aria-hidden="true">
+            <span>{categoryIcon(a.category, a.name)}</span>
+          </div>
+        )}
         <div className="place-hero-shade" />
         <div className="place-hero-inner">
           <Link to="/" className="place-back">
@@ -544,6 +550,21 @@ export default function AttractionDetailPage() {
               </ul>
             </details>
           </section>
+        )}
+
+        {/* Chi co anh dai dien (khong co bo suu tap): van ghi nguon / ghi ro anh minh hoa */}
+        {extra.length === 0 && photos[0]?.credit && (
+          <p className="photo-credits">
+            Ảnh đại diện: {photos[0].credit}
+            {photos[0].sourceUrl && (
+              <>
+                {', '}
+                <a href={photos[0].sourceUrl} target="_blank" rel="noreferrer">
+                  Wikimedia Commons <Icon name="external" size={13} />
+                </a>
+              </>
+            )}
+          </p>
         )}
 
         {/* ---------- Dia diem lan can ---------- */}

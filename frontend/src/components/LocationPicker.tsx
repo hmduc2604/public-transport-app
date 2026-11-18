@@ -53,7 +53,7 @@ export function LocationPicker({
       key: `a${a.attractionId}`,
       label: a.name,
       sub: a.category ?? 'Địa điểm',
-      icon: categoryIcon(a.category),
+      icon: categoryIcon(a.category, a.name),
       value: {
         input: { attractionId: a.attractionId, name: a.name },
         place: { name: a.name, latitude: a.latitude, longitude: a.longitude },

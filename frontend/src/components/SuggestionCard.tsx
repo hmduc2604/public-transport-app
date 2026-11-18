@@ -12,13 +12,13 @@ export function SuggestionCard({ s }: { s: Suggestion }) {
         <img className="cover" src={s.imageUrl} alt={s.name} loading="lazy" />
       ) : (
         <div className="cover cover-placeholder">
-          <span>{categoryIcon(s.category)}</span>
+          <span>{categoryIcon(s.category, s.name)}</span>
         </div>
       )}
       <div className="attraction-card-body">
         <div className="attraction-meta">
           <span className="chip">
-            {categoryIcon(s.category)} {s.category ?? 'Địa điểm'}
+            {categoryIcon(s.category, s.name)} {s.category ?? 'Địa điểm'}
           </span>
           {s.distanceMeters !== undefined && <span className="muted small">{formatDistance(s.distanceMeters)}</span>}
           {s.seen && <span className="muted small">Đã xem</span>}

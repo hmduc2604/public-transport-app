@@ -14,9 +14,14 @@ const CATEGORY_ICON: Record<string, string> = {
   'Quảng trường': '🚩',
   'Văn hóa': '📚',
   'Nghệ thuật': '🎭',
+  'Công viên': '🌳',
+  'Vui chơi': '🎢',
+  'Mua sắm': '🛍️',
 };
 
-export const categoryIcon = (c?: string | null) => (c && CATEGORY_ICON[c]) || '📍';
+/** Icon theo loai dia diem; nha tho (Cong giao) dung icon rieng thay cho banh xe Phap cua chua */
+export const categoryIcon = (c?: string | null, name?: string | null) =>
+  (name && /^nhà thờ/i.test(name) ? '⛪' : null) || (c && CATEGORY_ICON[c]) || '📍';
 
 /** Anh dai dien: neu chua co ImageUrl thi ve nen mau theo loai dia diem */
 export function AttractionCover({ a, tall }: { a: Attraction; tall?: boolean }) {
@@ -29,7 +34,7 @@ export function AttractionCover({ a, tall }: { a: Attraction; tall?: boolean }) 
       className={`cover cover-placeholder${tall ? ' cover-tall' : ''}`}
       style={{ background: `linear-gradient(135deg, hsl(${hue} 32% 30%), hsl(${(hue + 35) % 360} 38% 44%))` }}
     >
-      <span>{categoryIcon(a.category)}</span>
+      <span>{categoryIcon(a.category, a.name)}</span>
     </div>
   );
 }
@@ -40,7 +45,7 @@ export function AttractionCard({ a }: { a: Attraction }) {
       <AttractionCover a={a} />
       <div className="attraction-card-body">
         <div className="attraction-meta">
-          <span className="chip">{categoryIcon(a.category)} {a.category ?? 'Địa điểm'}</span>
+          <span className="chip">{categoryIcon(a.category, a.name)} {a.category ?? 'Địa điểm'}</span>
           {a.distanceMeters !== undefined && <span className="muted">{formatDistance(a.distanceMeters)}</span>}
           {a.score !== undefined && <span className="muted">★ {a.score}</span>}
         </div>

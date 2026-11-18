@@ -82,7 +82,7 @@ export default function HomePage() {
         <div className="hero-text">
           <div className="kicker">Xin chào{user ? `, ${user.fullName.split(' ').slice(-1)[0]}` : ''} 👋</div>
           <h1>Bạn muốn đi đâu hôm nay?</h1>
-          <p>Khám phá 20 điểm đến nổi bật của Hà Nội và tìm lộ trình kết hợp Bus, Metro, xe đạp, xe điện.</p>
+          <p>Khám phá 50 điểm đến nổi bật của Hà Nội và tìm lộ trình kết hợp Bus, Metro, xe đạp, xe điện.</p>
           <div className="hero-actions">
             <button className="btn btn-accent" onClick={() => navigate('/map')}>
               🗺️ Mở bản đồ tìm đường

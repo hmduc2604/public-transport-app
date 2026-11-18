@@ -192,64 +192,76 @@ export const gemini = {
     // Thu toi da 3 model / lan goi (tranh 1 cau hoi phai cho qua lau khi Gemini qua tai).
     // Con model du phong thi chi cho toi da 12 giay (model khoe tra loi trong vai giay), lan thu cuoi cho du thoi gian.
     const tries = models.slice(0, 3);
-    for (const [i, model] of tries.entries()) {
-      const timeoutMs = i < tries.length - 1 ? Math.min(env.ai.timeoutMs, 12_000) : env.ai.timeoutMs;
-      try {
-        let data: any;
+    // Ca 3 model deu bao 503 "qua tai" (tra loi rat nhanh) -> doi 1,5 giay roi thu lai 1 lan model dau tien
+    for (let pass = 0; pass < 2; pass++) {
+      const list = pass === 0 ? tries : tries.slice(0, 1);
+      const statuses: number[] = [];
+      for (const [i, model] of list.entries()) {
+        const timeoutMs = i < list.length - 1 ? Math.min(env.ai.timeoutMs, 12_000) : env.ai.timeoutMs;
         try {
-          data = await call('POST', `models/${encodeURIComponent(model)}:generateContent`, withThinking(model, req), timeoutMs);
+          let data: any;
+          try {
+            data = await call('POST', `models/${encodeURIComponent(model)}:generateContent`, withThinking(model, req), timeoutMs);
+          } catch (e) {
+            // Model khong ho tro muc suy nghi da chon -> goi lai khong kem thinkingConfig
+            if (e instanceof GeminiHttpError && e.status === 400 && /thinking/i.test(e.message) && !noThinking.has(model)) {
+              noThinking.add(model);
+              data = await call('POST', `models/${encodeURIComponent(model)}:generateContent`, req, timeoutMs);
+            } else throw e;
+          }
+          working = model;
+          skipped.delete(model);
+          const cand = data.candidates?.[0];
+          return {
+            model,
+            parts: (cand?.content?.parts ?? []) as GeminiPart[],
+            finishReason: cand?.finishReason ?? data.promptFeedback?.blockReason,
+            usage: data.usageMetadata,
+          };
         } catch (e) {
-          // Model khong ho tro muc suy nghi da chon -> goi lai khong kem thinkingConfig
-          if (e instanceof GeminiHttpError && e.status === 400 && /thinking/i.test(e.message) && !noThinking.has(model)) {
-            noThinking.add(model);
-            data = await call('POST', `models/${encodeURIComponent(model)}:generateContent`, req, timeoutMs);
-          } else throw e;
-        }
-        working = model;
-        const cand = data.candidates?.[0];
-        return {
-          model,
-          parts: (cand?.content?.parts ?? []) as GeminiPart[],
-          finishReason: cand?.finishReason ?? data.promptFeedback?.blockReason,
-          usage: data.usageMetadata,
-        };
-      } catch (e) {
-        lastError = e;
-        if (e instanceof GeminiHttpError) {
-          const quota = /\[([^\]]*)\]\s*$/.exec(e.message)?.[1];
-          console.warn(`[AI] ${model} loi ${e.status}: ${e.message.slice(0, 110)}${quota ? ` [${quota}]` : ''} -> thu model khac`);
-        }
-        if (e instanceof GeminiHttpError) {
-          const modelProblem =
-            e.status === 404 || (e.status === 429 && /limit: 0\b/.test(e.message)) || (e.status === 400 && /not supported|not found|unsupported/i.test(e.message));
-          if (modelProblem) {
-            skipped.set(model, Date.now() + 30 * 60 * 1000);
-            if (working === model) working = null;
-            continue;
+          lastError = e;
+          statuses.push(e instanceof GeminiHttpError ? e.status : 0);
+          if (e instanceof GeminiHttpError) {
+            const quota = /\[([^\]]*)\]\s*$/.exec(e.message)?.[1];
+            console.warn(`[AI] ${model} loi ${e.status}: ${e.message.slice(0, 110)}${quota ? ` [${quota}]` : ''} -> thu model khac`);
           }
-          if (e.status === 429) {
-            // Het luot: bo qua model den khi Google cho goi lai (retryDelay), toi da 24 gio;
-            // khong co retryDelay: theo ngay -> 1 gio, theo phut -> 1 phut
-            const retrySec = Number(/retry (\d+(?:\.\d+)?)s/.exec(e.message)?.[1]);
-            const waitMs = Number.isFinite(retrySec) && retrySec > 0
-              ? Math.min(Math.max(retrySec, 60), 24 * 3600) * 1000
-              : (/per ?day/i.test(e.message) ? 60 : 1) * 60 * 1000;
-            skipped.set(model, Date.now() + waitMs);
-            if (working === model) working = null;
-            continue;
+          if (e instanceof GeminiHttpError) {
+            const modelProblem =
+              e.status === 404 || (e.status === 429 && /limit: 0\b/.test(e.message)) || (e.status === 400 && /not supported|not found|unsupported/i.test(e.message));
+            if (modelProblem) {
+              skipped.set(model, Date.now() + 30 * 60 * 1000);
+              if (working === model) working = null;
+              continue;
+            }
+            if (e.status === 429) {
+              // Het luot: bo qua model den khi Google cho goi lai (retryDelay), toi da 24 gio;
+              // khong co retryDelay: theo ngay -> 1 gio, theo phut -> 1 phut
+              const retrySec = Number(/retry (\d+(?:\.\d+)?)s/.exec(e.message)?.[1]);
+              const waitMs = Number.isFinite(retrySec) && retrySec > 0
+                ? Math.min(Math.max(retrySec, 60), 24 * 3600) * 1000
+                : (/per ?day/i.test(e.message) ? 60 : 1) * 60 * 1000;
+              skipped.set(model, Date.now() + waitMs);
+              if (working === model) working = null;
+              continue;
+            }
+            if (e.status === 504) {
+              // Model nay dang cham bat thuong -> tam bo qua 30 phut
+              skipped.set(model, Date.now() + 30 * 60 * 1000);
+              if (working === model) working = null;
+              continue;
+            }
+            // 503 "high demand": model dang qua tai -> tam bo qua 2 phut, dung model khac
+            if (e.status === 503) skipped.set(model, Date.now() + 2 * 60 * 1000);
+            if (e.status === 429 || e.status >= 500) continue; // qua tai -> thu model khac
           }
-          if (e.status === 504) {
-            // Model nay dang cham bat thuong -> tam bo qua 30 phut
-            skipped.set(model, Date.now() + 30 * 60 * 1000);
-            if (working === model) working = null;
-            continue;
-          }
-          // 503 "high demand": model dang qua tai -> tam bo qua 2 phut, dung model khac
-          if (e.status === 503) skipped.set(model, Date.now() + 2 * 60 * 1000);
-          if (e.status === 429 || e.status >= 500) continue; // qua tai -> thu model khac
+          throw toAppError(e);
         }
-        throw toAppError(e);
       }
+      if (pass === 0 && statuses.length > 0 && statuses.every((st) => st === 503)) {
+        await new Promise((r) => setTimeout(r, 1500));
+        continue;
+      }
+      break;
     }
     throw toAppError(lastError);
   },
