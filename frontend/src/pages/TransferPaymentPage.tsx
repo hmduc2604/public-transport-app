@@ -17,6 +17,7 @@ import { OrderSummary } from '../components/payment/OrderSummary';
 import { PaymentSuccess } from '../components/payment/PaymentSuccess';
 import { formatDateTime, formatMoney } from '../utils/format';
 import { PaymentView } from '../types';
+import { Icon } from '../components/Icon';
 
 const POLL_MS = 4000;
 
@@ -142,8 +143,8 @@ export default function TransferPaymentPage() {
 
   const header = (
     <>
-      <Link to={`/payment/${orderId}`} className="small">
-        ← Đổi phương thức thanh toán
+      <Link to={`/payment/${orderId}`} className="back-link">
+        <Icon name="arrowLeft" size={16} /> Đổi phương thức thanh toán
       </Link>
       <h1>Chuyển khoản qua mã QR</h1>
     </>

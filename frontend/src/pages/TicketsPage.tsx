@@ -22,7 +22,7 @@ export default function TicketsPage() {
       <div className="row space-between">
         <h1>Vé của tôi</h1>
         <Link to="/tickets/buy" className="btn btn-primary">
-          + Mua vé
+          <Icon name="plus" size={17} /> Mua vé
         </Link>
       </div>
       <Link to="/tickets/buy#tu-van" className="advisor-banner">

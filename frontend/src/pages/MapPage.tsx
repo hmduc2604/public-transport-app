@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Icon } from '../components/Icon';
 import { MapView } from '../components/MapView';
 import { LocationPicker, PickedLocation } from '../components/LocationPicker';
 import { RouteCard } from '../components/RouteCard';
@@ -306,11 +307,11 @@ export default function MapPage() {
             <div className="row gap wrap">
               {selected.modes.some((m) => m !== 'WALK') && (
                 <button className="btn btn-accent" onClick={buyTickets}>
-                  🎫 Mua vé cho lộ trình
+                  <Icon name="ticket" size={18} /> Mua vé cho lộ trình
                 </button>
               )}
               <button className="btn btn-ghost" onClick={saveTrip}>
-                💾 Lưu chuyến đi
+                <Icon name="history" size={18} /> Lưu chuyến đi
               </button>
             </div>
             {savedMsg && (

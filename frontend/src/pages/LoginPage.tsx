@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { errorMessage } from '../services/api';
+import { AuthShell } from '../components/AuthShell';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -28,7 +29,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-page">
+    <AuthShell>
       <form className="card auth-card" onSubmit={submit}>
         <h1>Đăng nhập</h1>
         <p className="muted">Khám phá Hà Nội bằng giao thông công cộng</p>
@@ -82,6 +83,6 @@ export default function LoginPage() {
           ))}
         </div>
       </form>
-    </div>
+    </AuthShell>
   );
 }

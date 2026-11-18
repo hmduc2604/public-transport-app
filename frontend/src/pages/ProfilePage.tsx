@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { authApi } from '../services/authApi';
 import { errorMessage } from '../services/api';
 import { formatDate } from '../utils/format';
+import { ThemeSwitch } from '../components/HeaderMenus';
 
 export default function ProfilePage() {
   const { user, setUser } = useAuth();
@@ -37,14 +38,14 @@ export default function ProfilePage() {
 
   return (
     <div className="page narrow">
-      <h1>Hồ sơ</h1>
+      <h1>Tài khoản của tôi</h1>
       <form className="card" onSubmit={save}>
         <div className="profile-head">
           <div className="avatar">{user.fullName.charAt(0)}</div>
           <div>
             <strong>{user.fullName}</strong>
             <div className="muted small">
-              {user.email} · {user.role === 'ADMIN' ? 'Quản trị viên' : 'Khách hàng'} · tham gia {formatDate(user.createdAt)}
+              {user.email}, {user.role === 'ADMIN' ? 'quản trị viên' : 'khách hàng'}, tham gia {formatDate(user.createdAt)}
             </div>
           </div>
         </div>
@@ -57,8 +58,14 @@ export default function ProfilePage() {
           <span>Số điện thoại</span>
           <input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </label>
-        <button className="btn btn-primary">Lưu</button>
+        <button className="btn btn-primary">Lưu thay đổi</button>
       </form>
+
+      <section className="card">
+        <h3>Giao diện</h3>
+        <p className="muted small">Chọn Theo thiết bị để tự đổi sáng / tối theo cài đặt của máy.</p>
+        <ThemeSwitch />
+      </section>
 
       <form className="card" onSubmit={changePw}>
         <h3>Đổi mật khẩu</h3>

@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ThemeSwitch } from '../components/HeaderMenus';
 
 const GROUPS = [
   { title: 'Tổng quan', items: [{ to: '/admin', label: '📊 Dashboard', end: true }] },
@@ -49,9 +50,10 @@ export function AdminLayout() {
           </div>
         ))}
         <div className="admin-side-foot">
+          <ThemeSwitch variant="compact" />
           <div className="small">{user?.fullName}</div>
           <Link to="/" className="small">
-            ← Về trang người dùng
+            Về trang người dùng
           </Link>
         </div>
       </aside>

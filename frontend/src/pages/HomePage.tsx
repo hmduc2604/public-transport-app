@@ -1,16 +1,21 @@
 /** Trang chu = Kham pha Ha Noi: tim kiem, loc theo loai, goi y theo so thich (AI) */
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { attractionApi } from '../services/attractionApi';
 import { aiApi } from '../services/aiApi';
 import { errorMessage } from '../services/api';
-import { SuggestionResult } from '../types';
+import { Attraction, SuggestionResult } from '../types';
 import { AttractionCard, categoryIcon } from '../components/AttractionCard';
 import { SuggestionCard } from '../components/SuggestionCard';
 import { Icon } from '../components/Icon';
 import { Empty, ErrorBox, Loading } from '../components/Feedback';
 import { useAsync } from '../utils/useAsync';
 import { useAuth } from '../context/AuthContext';
+import { MODE_META } from '../utils/modes';
+import { TransitLines } from '../components/TransitLines';
+
+/** Bo dau tieng Viet de tim khong dau ("van mieu" -> Van Mieu) */
+const fold = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
 
 /** Chon nhanh so thich (bam de them vao o so thich) */
 const INTERESTS = ['Lịch sử', 'Kiến trúc Pháp', 'Chụp ảnh', 'Ẩm thực đường phố', 'Tâm linh, chùa chiền', 'Hồ nước, cây xanh', 'Về đêm', 'Đi cùng trẻ em', 'Nghệ thuật'];
@@ -34,6 +39,39 @@ export default function HomePage() {
   }, [search]);
 
   const categories = useAsync(() => attractionApi.categories(), []);
+  // O tim diem den o dau trang: chon dia diem -> mo ban do tim duong toi do
+  const allPlaces = useAsync(() => attractionApi.list({ sort: 'popular' }), []);
+  const [dest, setDest] = useState('');
+  const [destOpen, setDestOpen] = useState(false);
+  const [destActive, setDestActive] = useState(0);
+  const destMatches = useMemo<Attraction[]>(() => {
+    const q = fold(dest.trim());
+    if (!q) return [];
+    return (allPlaces.data ?? []).filter((a) => fold(`${a.name} ${a.category ?? ''} ${a.address ?? ''}`).includes(q)).slice(0, 6);
+  }, [dest, allPlaces.data]);
+  const goTo = (a: Attraction) => navigate(`/map?to=attraction:${a.attractionId}`);
+  const onDestSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const pick = destMatches[destActive] ?? destMatches[0];
+    if (pick) return goTo(pick);
+    if (!dest.trim()) return navigate('/map');
+    // Khong khop dia diem nao -> loc danh sach Kham pha theo chu da go
+    setSearch(dest.trim());
+    document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth' });
+  };
+  const onDestKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (!destMatches.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setDestOpen(true);
+      setDestActive((i) => (i + 1) % destMatches.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setDestActive((i) => (i - 1 + destMatches.length) % destMatches.length);
+    } else if (e.key === 'Escape') {
+      setDestOpen(false);
+    }
+  };
   const featured = useAsync(() => attractionApi.featured(4), []);
   const list = useAsync(() => attractionApi.list({ search: debounced, category, sort }), [debounced, category, sort]);
 
@@ -78,29 +116,88 @@ export default function HomePage() {
 
   return (
     <div className="page">
-      <section className="hero">
-        <div className="hero-text">
-          <div className="kicker">Xin chào{user ? `, ${user.fullName.split(' ').slice(-1)[0]}` : ''} 👋</div>
+      <section className="home-hero">
+        <TransitLines />
+        <div className="hero-content">
+          <p className="hero-greet">Xin chào{user ? `, ${user.fullName.split(' ').slice(-1)[0]}` : ''}</p>
           <h1>Bạn muốn đi đâu hôm nay?</h1>
-          <p>Khám phá 50 điểm đến nổi bật của Hà Nội và tìm lộ trình kết hợp Bus, Metro, xe đạp, xe điện.</p>
-          <div className="hero-actions">
-            <button className="btn btn-accent" onClick={() => navigate('/map')}>
-              🗺️ Mở bản đồ tìm đường
+          <p className="hero-sub">Chọn điểm đến, HanoiGo tìm lộ trình kết hợp xe buýt, Metro, xe đạp và xe điện công cộng.</p>
+          <form className="hero-search" role="search" onSubmit={onDestSubmit}>
+            <Icon name="search" size={20} />
+            <input
+              value={dest}
+              onChange={(e) => {
+                setDest(e.target.value);
+                setDestActive(0);
+                setDestOpen(true);
+              }}
+              onFocus={() => setDestOpen(true)}
+              onBlur={() => window.setTimeout(() => setDestOpen(false), 150)}
+              onKeyDown={onDestKey}
+              placeholder="Nhập điểm đến: Văn Miếu, Hồ Tây, Lotte Mall…"
+              aria-label="Điểm đến"
+              role="combobox"
+              aria-expanded={destOpen && destMatches.length > 0}
+              aria-controls="hero-results"
+              aria-autocomplete="list"
+              autoComplete="off"
+            />
+            <button className="btn btn-accent" type="submit">
+              <Icon name="route" size={18} />
+              <span className="btn-label">Tìm đường</span>
             </button>
-            <button className="btn btn-ghost-light" onClick={() => navigate('/assistant')}>
+            {destOpen && destMatches.length > 0 && (
+              <ul className="hero-results" id="hero-results" role="listbox">
+                {destMatches.map((a, i) => (
+                  <li
+                    key={a.attractionId}
+                    role="option"
+                    aria-selected={i === destActive}
+                    className={`hero-result${i === destActive ? ' on' : ''}`}
+                    onMouseEnter={() => setDestActive(i)}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      goTo(a);
+                    }}
+                  >
+                    <span className="hero-result-icon">{a.imageUrl ? <img src={a.imageUrl} alt="" /> : categoryIcon(a.category, a.name)}</span>
+                    <span className="hero-result-text">
+                      <strong>{a.name}</strong>
+                      <span>{[a.category, a.address].filter(Boolean).join(', ')}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </form>
+          {featured.data && featured.data.length > 0 && (
+            <div className="hero-quick">
+              <span>Phổ biến:</span>
+              {featured.data.map((a) => (
+                <button key={a.attractionId} type="button" onClick={() => goTo(a)}>
+                  {a.name.replace(/^Lăng Chủ tịch Hồ Chí Minh$/, 'Lăng Bác').replace(/ - .*$/, '')}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="hero-foot">
+          <ul className="hero-legend" aria-label="Phương tiện trong hệ thống">
+            {(['BUS', 'METRO', 'BICYCLE', 'ELECTRIC_VEHICLE'] as const).map((m) => (
+              <li key={m}>
+                <i style={{ ['--c' as any]: MODE_META[m].color }} />
+                {MODE_META[m].label}
+              </li>
+            ))}
+          </ul>
+          <div className="hero-links">
+            <button className="btn btn-sm btn-ghost-light" onClick={() => navigate('/assistant')}>
               <Icon name="sparkles" size={16} /> Hỏi trợ lý AI
             </button>
-            <a href="#explore" className="btn btn-ghost-light">
-              Khám phá địa điểm ↓
+            <a href="#explore" className="btn btn-sm btn-ghost-light">
+              Xem 50 địa điểm
             </a>
           </div>
-        </div>
-        <div className="hero-modes">
-          {['🚌 Bus', '🚇 Metro', '🚲 Xe đạp', '🛵 Xe điện'].map((m) => (
-            <span key={m} className="hero-mode">
-              {m}
-            </span>
-          ))}
         </div>
       </section>
 
@@ -144,7 +241,8 @@ export default function HomePage() {
             {suggesting && !locating ? 'Đang gợi ý…' : 'Gợi ý'}
           </button>
           <button className="btn btn-ghost" type="button" onClick={suggestNearMe} disabled={suggesting}>
-            {locating ? 'Đang định vị…' : '📍 Gần tôi'}
+            <Icon name="locate" size={17} />
+            {locating ? 'Đang định vị…' : 'Gần tôi'}
           </button>
         </form>
         <div className="chips">
@@ -177,7 +275,7 @@ export default function HomePage() {
         <div className="section-head">
           <h2>Khám phá Hà Nội</h2>
           <div className="row gap">
-            <input className="input" placeholder="🔎 Tìm địa điểm..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input className="input" placeholder="Tìm theo tên địa điểm" aria-label="Tìm địa điểm" value={search} onChange={(e) => setSearch(e.target.value)} />
             <select className="input" value={sort} onChange={(e) => setSort(e.target.value)}>
               <option value="popular">Nổi bật</option>
               <option value="name">Tên A-Z</option>

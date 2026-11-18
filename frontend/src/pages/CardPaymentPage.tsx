@@ -26,6 +26,7 @@ import {
   validateCardForm,
 } from '../utils/card';
 import { CardKind, CardPaymentResult } from '../types';
+import { Icon } from '../components/Icon';
 
 const EMPTY: CardForm = { cardKind: 'INTERNATIONAL', cardNumber: '', cardHolder: '', expiry: '', cvv: '', bankBin: '' };
 
@@ -139,8 +140,8 @@ export default function CardPaymentPage() {
 
   return (
     <div className="page">
-      <Link to={`/payment/${order.orderId}`} className="small">
-        ← Đổi phương thức thanh toán
+      <Link to={`/payment/${order.orderId}`} className="back-link">
+        <Icon name="arrowLeft" size={16} /> Đổi phương thức thanh toán
       </Link>
       <h1>Thanh toán bằng thẻ</h1>
       <div className="pay-layout">

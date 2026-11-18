@@ -8,6 +8,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../services/authApi';
 import { errorMessage } from '../services/api';
+import { AuthShell } from '../components/AuthShell';
 import { VerificationChannels, VerificationInfo, VerifyChannel } from '../types';
 
 const PHONE_RE = /^(0|\+84|84)?[35789]\d{8}$/;
@@ -119,7 +120,7 @@ export default function RegisterPage() {
   /* ---------------- Buoc 2 ---------------- */
   if (info) {
     return (
-      <div className="auth-page">
+      <AuthShell>
         <form className="card auth-card" onSubmit={verify}>
           <div className="steps">
             <span className="step done">1. Thông tin</span>
@@ -159,14 +160,14 @@ export default function RegisterPage() {
                 setNotice(null);
               }}
             >
-              ← Sửa thông tin / đổi cách nhận mã
+              Sửa thông tin hoặc đổi cách nhận mã
             </button>
             <button type="button" className="link-btn" onClick={resend} disabled={busy || resendLeft > 0}>
               {resendLeft > 0 ? `Gửi lại mã (${resendLeft}s)` : 'Gửi lại mã'}
             </button>
           </div>
         </form>
-      </div>
+      </AuthShell>
     );
   }
 
@@ -183,7 +184,7 @@ export default function RegisterPage() {
   );
 
   return (
-    <div className="auth-page">
+    <AuthShell>
       <form className="card auth-card" onSubmit={sendCode}>
         <div className="steps">
           <span className="step active">1. Thông tin</span>
@@ -241,6 +242,6 @@ export default function RegisterPage() {
           </Link>
         </p>
       </form>
-    </div>
+    </AuthShell>
   );
 }

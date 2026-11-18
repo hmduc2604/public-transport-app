@@ -5,6 +5,7 @@ import { useAsync } from '../utils/useAsync';
 import { ErrorBox, Loading, StatusBadge } from '../components/Feedback';
 import { formatDateTime, formatMinutes, formatMoney } from '../utils/format';
 import { MODE_META, STATUS_LABEL } from '../utils/modes';
+import { Icon } from '../components/Icon';
 
 export default function TicketDetailPage() {
   const { id } = useParams();
@@ -18,7 +19,7 @@ export default function TicketDetailPage() {
 
   return (
     <div className="page narrow">
-      <Link to="/tickets" className="back-link">← Vé của tôi</Link>
+      <Link to="/tickets" className="back-link"><Icon name="arrowLeft" size={16} /> Vé của tôi</Link>
       <div className={`eticket eticket-${t.status.toLowerCase()}`}>
         <div className="eticket-head" style={{ background: m.color }}>
           <div>

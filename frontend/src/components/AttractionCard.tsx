@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Attraction } from '../types';
 import { formatDistance } from '../utils/format';
+import { Icon } from './Icon';
 
 const CATEGORY_ICON: Record<string, string> = {
   'Danh thắng': '🏞️',
@@ -40,26 +41,53 @@ export function AttractionCover({ a, tall }: { a: Attraction; tall?: boolean }) 
 }
 
 export function AttractionCard({ a }: { a: Attraction }) {
+  const photos = a.imageCount ? a.imageCount + (a.imageUrl ? 1 : 0) : 0;
   return (
     <Link to={`/attractions/${a.attractionId}`} className="attraction-card">
-      <AttractionCover a={a} />
+      <div className="attraction-media">
+        <AttractionCover a={a} />
+        <span className="media-chip">
+          {categoryIcon(a.category, a.name)} {a.category ?? 'Địa điểm'}
+        </span>
+        {photos > 0 && (
+          <span className="media-count" title={`${photos} ảnh`}>
+            <Icon name="images" size={14} /> {photos}
+          </span>
+        )}
+      </div>
       <div className="attraction-card-body">
-        <div className="attraction-meta">
-          <span className="chip">{categoryIcon(a.category, a.name)} {a.category ?? 'Địa điểm'}</span>
-          {a.distanceMeters !== undefined && <span className="muted">{formatDistance(a.distanceMeters)}</span>}
-          {a.score !== undefined && <span className="muted">★ {a.score}</span>}
-        </div>
+        {(a.distanceMeters !== undefined || a.score !== undefined) && (
+          <div className="attraction-meta">
+            {a.distanceMeters !== undefined && <span className="muted">{formatDistance(a.distanceMeters)}</span>}
+            {a.score !== undefined && <span className="muted">★ {a.score}</span>}
+          </div>
+        )}
         <h3>{a.name}</h3>
         <p className="muted clamp-2">{a.description}</p>
         <ul className="card-facts">
-          {a.address && <li title="Địa chỉ">📍 <span className="clamp-1">{a.address}</span></li>}
-          {a.hoursSummary && <li title="Giờ mở cửa">🕐 <span className="clamp-1">{a.hoursSummary}</span></li>}
-          {a.visitDuration && <li title="Thời gian tham quan gợi ý">⏱ <span className="clamp-1">{a.visitDuration}</span></li>}
+          {a.address && (
+            <li title="Địa chỉ">
+              <Icon name="pin" size={15} /> <span className="clamp-1">{a.address}</span>
+            </li>
+          )}
+          {a.hoursSummary && (
+            <li title="Giờ mở cửa">
+              <Icon name="clock" size={15} /> <span className="clamp-1">{a.hoursSummary}</span>
+            </li>
+          )}
+          {a.visitDuration && (
+            <li title="Thời gian tham quan gợi ý">
+              <Icon name="hourglass" size={15} /> <span className="clamp-1">{a.visitDuration}</span>
+            </li>
+          )}
         </ul>
-        <div className="card-foot">
-          {a.priceFrom && <span className={`price-tag${a.priceFrom === 'Miễn phí' ? ' free' : ''}`}>🎟 {a.priceFrom}</span>}
-          {a.imageCount ? <span className="muted small">📷 {a.imageCount + (a.imageUrl ? 1 : 0)} ảnh</span> : null}
-        </div>
+        {a.priceFrom && (
+          <div className="card-foot">
+            <span className={`price-tag${a.priceFrom === 'Miễn phí' ? ' free' : ''}`}>
+              <Icon name="ticket" size={14} /> {a.priceFrom}
+            </span>
+          </div>
+        )}
       </div>
     </Link>
   );

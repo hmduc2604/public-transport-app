@@ -48,7 +48,7 @@ export function LoginRequired({ children, icon = '🔒', title, message, perks =
           </Link>
         </div>
         <Link to="/" className="small login-gate-back">
-          ← Quay lại trang Khám phá
+          Quay lại trang Khám phá
         </Link>
       </div>
     </div>

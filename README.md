@@ -94,7 +94,7 @@ Vite đã cấu hình proxy `/api → http://localhost:5000`, nên không cần 
 | admin@example.com | ADMIN |
 
 ## Kịch bản demo khi bảo vệ
-1. Đăng nhập `an@example.com` → Trang chủ "Bạn muốn đi đâu hôm nay?"
+1. Đăng nhập `an@example.com` → Trang chủ "Bạn muốn đi đâu hôm nay?": gõ điểm đến vào ô tìm kiếm (gõ không dấu cũng được, ví dụ "ho tay") → mở thẳng bản đồ tìm đường tới nơi đó. Nút mặt trời / mặt trăng góc phải để đổi giao diện sáng / tối.
 2. Khám phá → chọn **Văn Miếu - Quốc Tử Giám** → xem chi tiết → **Tìm đường đến đây**.
 3. Chọn điểm đi (gõ "Hỏa Lò", hoặc "Dùng vị trí hiện tại", hoặc chọn trên bản đồ) → **Tìm đường**.
 4. Hệ thống trả **Top 3** phương án, gắn nhãn Nhanh nhất / Rẻ nhất / Ít đi bộ / Ít chuyển tuyến; đổi tab tiêu chí để so sánh.
@@ -102,7 +102,7 @@ Vite đã cấu hình proxy `/api → http://localhost:5000`, nên không cần 
 6. **Mua vé cho lộ trình** → vé lượt được chọn sẵn → **Thanh toán** bằng thẻ (thẻ thử nghiệm `4242 4242 4242 4242`) hoặc **chuyển khoản QR** → **QR e-ticket**.
 7. Đăng nhập `admin@example.com` → Dashboard thống kê → Vé & Soát vé: dán nội dung QR → vé lượt chuyển **Đã dùng**.
 8. Admin thêm trạm/tuyến mới → graph tìm đường tự xây lại → tìm đường thấy tuyến mới.
-9. **Trợ lý AI** (menu ✨ Trợ lý AI): gõ "Lên lịch nửa ngày: Văn Miếu → Hoàng thành Thăng Long → Hồ Tây ngắm hoàng hôn" → trợ lý trả lịch trình có giờ đến / giờ rời từng nơi, mỗi chặng 1 thẻ lộ trình → bấm **Xem trên bản đồ**. Hỏi tiếp "đi chậm thôi, ít đi bộ" để trợ lý tìm lại theo tiêu chí khác.
+9. **Trợ lý AI** (menu Trợ lý AI): gõ "Lên lịch nửa ngày: Văn Miếu → Hoàng thành Thăng Long → Hồ Tây ngắm hoàng hôn" → trợ lý trả lịch trình có giờ đến / giờ rời từng nơi, mỗi chặng 1 thẻ lộ trình → bấm **Xem trên bản đồ**. Hỏi tiếp "đi chậm thôi, ít đi bộ" để trợ lý tìm lại theo tiêu chí khác.
 10. Trang chủ → **Gợi ý cho bạn**: gõ sở thích ("kiến trúc Pháp, chụp ảnh buổi tối") → 4 địa điểm hợp nhất kèm lý do; đăng nhập `an@example.com` thì có thêm dòng "Dành cho bạn, dựa trên: …" (lịch sử đã xem / đã tìm đường).
 11. Vé → **Mua vé** → khung **Tư vấn chọn vé**: gõ "đi làm từ Cầu Giấy đến Hồ Gươm, thứ 2 – thứ 6" (hoặc bấm **Dựa trên vé tôi đã mua**) → hệ thống so tiền vé lượt cả tháng với vé tháng, ghi rõ tiết kiệm bao nhiêu → bấm **Chọn Vé tháng Bus** để thêm vào đơn.
 12. Mở trang **Văn Miếu - Quốc Tử Giám** → mục **Hỏi đáp**: hỏi "Giá vé bao nhiêu?", rồi hỏi tiếp "Còn trẻ em thì sao?", "Giờ này còn mở cửa không?" → AI trả lời chỉ dựa trên dữ liệu của địa điểm (giờ mở cửa theo mùa, giá vé, trạm gần).
@@ -196,7 +196,7 @@ Sau đó chạy `upgrade-db.bat` (có `11_ai_features.sql`: bảng `AttractionEm
 
 | Chức năng | Ở đâu | Cách hoạt động |
 |---|---|---|
-| **Trợ lý lập lộ trình bằng tiếng Việt** | Menu **✨ Trợ lý AI** (`/assistant`, cần đăng nhập) | Gõ hoặc nói (nút micro) câu tự nhiên: "Từ Hồ Gươm đến Văn Miếu, đi bộ ít thôi", "Sáng mai 8h đi Hỏa Lò rồi Văn Miếu", "mình đang ở đây, muốn đi Lăng Bác" (bật **Dùng vị trí của tôi**). Gemini hiểu câu hỏi rồi gọi bộ tìm đường, dữ liệu địa điểm, bảng giá vé của hệ thống; trả lời tiếng Việt kèm **thẻ lộ trình** (3 phương án, mở trên bản đồ) và **thẻ địa điểm**. Lịch trình nhiều điểm được tính nối tiếp từng chặng, có cảnh báo nơi đã đóng cửa và giờ mặt trời lặn. Nhớ ngữ cảnh trong cuộc trò chuyện ("còn cách nào rẻ hơn không?"). |
+| **Trợ lý lập lộ trình bằng tiếng Việt** | Menu **Trợ lý AI** (`/assistant`, cần đăng nhập) | Gõ hoặc nói (nút micro) câu tự nhiên: "Từ Hồ Gươm đến Văn Miếu, đi bộ ít thôi", "Sáng mai 8h đi Hỏa Lò rồi Văn Miếu", "mình đang ở đây, muốn đi Lăng Bác" (bật **Dùng vị trí của tôi**). Gemini hiểu câu hỏi rồi gọi bộ tìm đường, dữ liệu địa điểm, bảng giá vé của hệ thống; trả lời tiếng Việt kèm **thẻ lộ trình** (3 phương án, mở trên bản đồ) và **thẻ địa điểm**. Lịch trình nhiều điểm được tính nối tiếp từng chặng, có cảnh báo nơi đã đóng cửa và giờ mặt trời lặn. Nhớ ngữ cảnh trong cuộc trò chuyện ("còn cách nào rẻ hơn không?"). |
 | **Gợi ý địa điểm theo sở thích** | Trang chủ → **Gợi ý cho bạn** | Gõ sở thích bất kỳ hoặc chọn nhanh (Lịch sử, Kiến trúc Pháp, Chụp ảnh, Ẩm thực…), có thể bấm **📍 Gần tôi**. Hệ thống so khớp **ngữ nghĩa** (vector Gemini) giữa sở thích và mô tả các địa điểm, cộng thêm lịch sử các nơi bạn đã xem / tìm đường tới, khoảng cách và độ phổ biến; mỗi gợi ý có lý do cụ thể. Không có khóa hoặc mất mạng → tự chuyển sang khớp từ khóa. |
 | **Tư vấn chọn vé** | **Vé → Mua vé** (khung trên cùng, `/tickets/buy#tu-van`), banner ở **Vé của tôi**, và trong **Trợ lý AI** ("đi buýt 2 lượt mỗi ngày, có nên mua vé tháng?") | Mô tả thói quen bằng lời ("metro 2 lượt mỗi ngày, 5 ngày/tuần", "đi làm từ Cầu Giấy đến Hồ Gươm") hoặc bấm **Dựa trên vé tôi đã mua** (vé lượt 30 ngày qua). Gemini chỉ tách thói quen thành số liệu; số lượt / tháng, tiền vé lượt, vé tháng, điểm hòa vốn, tiết kiệm đều do backend tính từ bảng giá. Với quãng đi làm, hệ thống tìm đường thật (Nhanh nhất + Rẻ nhất), chọn phương án rẻ nhất mỗi tháng mà chậm hơn không quá 20 phút. Đã có vé tháng còn hạn → báo "chưa cần mua". Bấm **Chọn** để thêm vé vào đơn. Mô tả chưa rõ → hỏi lại, không đoán. |
 | **Hỏi đáp trên trang địa điểm** | Trang chi tiết mỗi địa điểm → mục **Hỏi đáp** (cần đăng nhập) | Hỏi tự do: giá vé, giờ mở cửa, "giờ này còn mở không?", trẻ em, đi bằng xe buýt nào, gần đó có gì… AI chỉ trả lời từ dữ liệu của địa điểm trong database (giới thiệu, lịch sử, giờ mở cửa, giá vé, kinh nghiệm, trạm và địa điểm lân cận); không có thông tin thì nói không có. Giờ mở cửa tính **theo mùa** (giờ mùa đông tháng 11 – 3), ngày nghỉ trong tuần và giờ cuối tuần. Nhớ 3 câu hỏi trước để hỏi tiếp; gợi ý câu hỏi tiếp theo. Không có khóa / Gemini bận → trả lời theo từ khóa. |
@@ -206,7 +206,7 @@ Chi tiết kỹ thuật: `backend/README.md` (mục 5), API: `docs/API.md` (mụ
 ## Yêu cầu đăng nhập khi xem chi tiết
 
 - Khách chưa đăng nhập vẫn xem được trang chủ và danh sách **Khám phá**.
-- Bấm vào một địa điểm (`/attractions/:id`) hoặc mở **Bản đồ & Tìm đường** (`/map`) khi chưa đăng nhập → hiện thông báo kèm nút **Đăng nhập** / **Đăng ký tài khoản mới** (`components/LoginRequired.tsx`).
+- Bấm vào một địa điểm (`/attractions/:id`) hoặc mở **Tìm đường** (`/map`) khi chưa đăng nhập → hiện thông báo kèm nút **Đăng nhập** / **Đăng ký tài khoản mới** (`components/LoginRequired.tsx`).
 - Đăng nhập hoặc đăng ký xong sẽ tự quay lại đúng trang đang định xem; đã đăng nhập thì xem bình thường.
 
 ## Thanh toán: thẻ ngân hàng và chuyển khoản QR
@@ -324,6 +324,20 @@ Gia cố thêm: bắt sự kiện lỗi của connection pool (`config/database.
 | "Giờ này còn mở cửa không?" lúc 17:29 tháng 11 | Trả lời đã đóng cửa lúc 17:00 (giờ mùa đông). Lỗi cũ: dùng giờ mùa hè. Trợ lý lập lịch trình cũng dùng giờ theo mùa |
 | `api-test.bat` | 109/109 (thêm 11 test: tư vấn vé, hỏi đáp, trợ lý gọi `recommend_ticket`; tự chờ rồi thử lại khi Gemini báo hết lượt / phút) |
 | Type-check backend + frontend | 0 lỗi |
+
+## Giao diện mới và chế độ tối (18/11/2026)
+
+| Phần | Thay đổi |
+|---|---|
+| Chế độ Sáng / Tối | Nút mặt trời / mặt trăng trên thanh menu (và trong thanh bên trang quản trị, mục **Giao diện** ở trang Tài khoản): **Sáng**, **Tối**, **Theo thiết bị** (tự đổi theo cài đặt máy). Lựa chọn được nhớ trên trình duyệt; trang mở ra đúng chế độ ngay, không bị nháy trắng. Chế độ tối dùng nền xanh mực đậm, màu vàng hoàng thành sáng hơn; bản đồ OpenStreetMap được đổi sang tông tối, mã QR vé và chuyển khoản luôn nền trắng để quét được. |
+| Hệ màu | Toàn bộ màu nằm ở biến CSS (`--bg`, `--surface`, `--heading`, `--primary`, `--success-bg`…) đầu `frontend/src/index.css`; `[data-theme='dark']` đổi bộ biến. Thêm màu mới thì dùng biến, không đặt mã màu cứng trong component. |
+| Trang chủ | Ô tìm điểm đến ngay đầu trang (gợi ý theo tên, tìm không dấu, phím mũi tên + Enter) → mở bản đồ tìm đường; nút đi nhanh tới các điểm phổ biến. Hình nền là 4 tuyến Bus / Metro / xe đạp / xe điện theo đúng màu trên bản đồ, vẽ ra một lần khi mở trang (tắt nếu máy bật giảm chuyển động). |
+| Thanh menu | Icon cho từng mục, menu tài khoản (Tài khoản, Vé của tôi, Lịch sử, Quản trị, Đăng xuất), trên điện thoại gọn trong nút ☰. Có liên kết "Bỏ qua thanh điều hướng" cho người dùng bàn phím. |
+| Thẻ địa điểm | Loại địa điểm và số ảnh đặt trên ảnh; địa chỉ, giờ mở cửa, thời gian tham quan, giá vé dùng icon nét thay cho emoji. |
+| Đăng nhập / Đăng ký | Khung 2 cột: bên trái giới thiệu ngắn trên nền 4 tuyến, bên phải là form (điện thoại chỉ hiện form). |
+| Khác | Nút, ô nhập, thẻ, tab tiêu chí tìm đường kiểu mới; popup và nút zoom bản đồ theo giao diện; bảng quản trị không còn tiêu đề in hoa. |
+
+File mới: `context/ThemeContext.tsx`, `components/HeaderMenus.tsx` (menu giao diện + tài khoản), `components/TransitLines.tsx`, `components/AuthShell.tsx`.
 
 ## Bổ sung 14 địa điểm (17/11/2026)
 
