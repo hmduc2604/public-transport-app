@@ -4,6 +4,7 @@
  *  - Dai thong tin: gio mo cua, gia ve, thoi gian tham quan, tram gan nhat
  *  - Gioi thieu, du kien nhanh, diem noi bat, lich su (moc thoi gian), kinh nghiem tham quan
  *  - Cot phai: den bang phuong tien cong cong (tram + tuyen), ban do nho, gio mo cua & gia ve day du
+ *  - Hoi dap AI ve dia diem (chi tra loi tu thong tin trong database)
  *  - Bo suu tap anh (lightbox) va dia diem lan can
  */
 import { MouseEvent, useEffect, useRef, useState } from 'react';
@@ -13,6 +14,7 @@ import { useAsync } from '../utils/useAsync';
 import { ErrorBox, Loading } from '../components/Feedback';
 import { categoryIcon } from '../components/AttractionCard';
 import { MapView } from '../components/MapView';
+import { PlaceQa } from '../components/PlaceQa';
 import { ModeBadge } from '../components/ModeBadge';
 import { Icon, IconName } from '../components/Icon';
 import { formatDistance } from '../utils/format';
@@ -291,6 +293,7 @@ export default function AttractionDetailPage() {
   const navItems: NavItem[] = [
     { id: 'tong-quan', label: 'Tổng quan' },
     { id: 'di-lai', label: 'Đi lại', stackedOnly: true },
+    { id: 'hoi-dap', label: 'Hỏi đáp' },
     ...(a.highlights.length > 0 ? [{ id: 'noi-bat', label: 'Nổi bật' }] : []),
     ...(a.history || timeline.length > 0 ? [{ id: 'lich-su', label: 'Lịch sử' }] : []),
     ...(tips.length > 0 ? [{ id: 'kinh-nghiem', label: 'Kinh nghiệm' }] : []),
@@ -470,6 +473,8 @@ export default function AttractionDetailPage() {
 
           {/* Noi dung chinh */}
           <div className="place-main">
+            <PlaceQa attractionId={a.attractionId} name={a.name} />
+
             {a.highlights.length > 0 && (
               <section className="place-section" id="noi-bat" data-spy aria-labelledby="h-hl">
                 <h2 id="h-hl">Điểm nổi bật</h2>

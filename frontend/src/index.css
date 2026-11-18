@@ -886,3 +886,62 @@ textarea.input { resize: vertical; }
 }
 .suggestion-card .card-foot .price-tag { white-space: nowrap; flex: none; }
 .suggestion-card .card-foot .muted { min-width: 0; text-align: right; }
+
+/* ---------- AI: tu van chon ve (trang Mua ve, the trong Tro ly AI) ---------- */
+.advisor { margin-bottom: 1.4rem; }
+.advisor-head { display: flex; gap: 0.8rem; align-items: flex-start; margin-bottom: 0.7rem; }
+.advisor-head h2 { margin: 0 0 0.15rem; }
+.advisor-head p { margin: 0; }
+.advisor-head .ai-head-icon { width: 40px; height: 40px; border-radius: 11px; }
+.advisor-form { display: grid; gap: 0.55rem; }
+.advisor-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.advisor-examples { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.65rem 0 0.1rem; }
+.advisor-examples .chip-btn { text-align: left; }
+.advisor-loading { display: flex; align-items: center; gap: 0.55rem; margin-top: 0.9rem; color: var(--muted); font-size: 0.92rem; }
+.advisor-banner { display: flex; align-items: center; gap: 0.6rem; background: #fdf6e3; border: 1px solid #f1dfae; border-radius: var(--radius); padding: 0.7rem 0.9rem; margin: 0.4rem 0 1rem; color: var(--text); font-size: 0.93rem; }
+.advisor-banner:hover { text-decoration: none; border-color: var(--ochre); }
+.advisor-banner > .icon:first-child { color: var(--ochre-2); flex: none; }
+.advisor-banner > span { flex: 1; min-width: 0; }
+.advisor-banner > .icon:last-child { color: var(--muted); flex: none; }
+
+.advice { margin-top: 0.95rem; display: grid; gap: 0.75rem; }
+.advice.compact { margin-top: 0.1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.85rem 0.9rem; box-shadow: var(--shadow); gap: 0.6rem; }
+.advice-title { display: flex; align-items: center; gap: 0.4rem; font-weight: 700; color: var(--ink); }
+.advice-title .icon { color: var(--ochre-2); }
+.advice-summary { display: flex; gap: 0.6rem; background: #fdf6e3; border-radius: var(--radius-sm); padding: 0.75rem 0.9rem; line-height: 1.6; }
+.advice-summary > .icon { color: var(--ochre-2); flex: none; margin-top: 3px; }
+.advice-understood { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.advice-commute { display: block; margin: 0; color: var(--muted); line-height: 1.55; }
+.advice-commute .icon { vertical-align: -3px; margin-right: 0.15rem; color: var(--ink-2); }
+.advice-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.advice-item { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.75rem 0.8rem; display: grid; gap: 0.5rem; align-content: start; background: var(--surface); }
+.advice-item.v-BUY_PASS { border-color: var(--ochre); box-shadow: inset 0 0 0 1px var(--ochre); }
+.advice-item-head { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+.advice-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+.advice-compare > div { display: grid; gap: 0.05rem; background: var(--surface-2); border: 1px solid transparent; border-radius: 8px; padding: 0.4rem 0.55rem; min-width: 0; }
+.advice-compare > div > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.advice-compare > div.best { border-color: var(--success); background: #eef8f2; }
+.advice-compare strong { color: var(--ink); font-size: 1.02rem; }
+.advice-verdict { font-weight: 700; font-size: 0.92rem; color: var(--ink-2); }
+.v-BUY_PASS .advice-verdict { color: var(--success); }
+.v-HAS_PASS .advice-verdict { color: var(--info); }
+.advice-item .btn { justify-self: start; }
+.advice-total { margin: 0; font-size: 0.93rem; }
+
+/* ---------- AI: hoi dap tren trang dia diem ---------- */
+.place-qa { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.15rem 1.25rem; box-shadow: var(--shadow); }
+.place-qa h2 { flex-wrap: wrap; margin-bottom: 0.35rem; }
+.place-qa h2 .icon { color: var(--ochre-2); }
+.place-qa h2 .ai-badge { margin-left: 0; }
+.qa-thread { display: grid; gap: 0.75rem; margin: 0.75rem 0 0.85rem; max-height: 460px; overflow-y: auto; padding-right: 0.2rem; }
+.qa-item { display: grid; gap: 0.4rem; }
+.qa-q { justify-self: end; max-width: 85%; background: var(--ink); color: #fff; padding: 0.45rem 0.85rem; border-radius: 16px 16px 4px 16px; font-size: 0.95rem; overflow-wrap: anywhere; }
+.qa-a { justify-self: start; max-width: 96%; background: var(--surface-2); border: 1px solid var(--line); padding: 0.6rem 0.9rem; border-radius: 4px 16px 16px 16px; line-height: 1.6; overflow-wrap: anywhere; }
+.qa-a.ai-typing { display: flex; align-items: center; gap: 0.6rem; }
+.qa-error { background: #fdecea; border-color: #f5c6c0; color: #8e2a1f; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.qa-notice { margin: 0.4rem 0 0; }
+.qa-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0 0.75rem; }
+.qa-chips .chip-btn { text-align: left; }
+.qa-form { display: flex; gap: 0.5rem; }
+.qa-form .input { flex: 1; min-width: 0; }
+.qa-form .btn { flex: none; }

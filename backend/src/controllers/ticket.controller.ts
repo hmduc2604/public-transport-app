@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { ticketService } from '../services/ticket.service';
 import { orderService } from '../services/order.service';
 import { tripHistoryService } from '../services/tripHistory.service';
+import { ticketAdvisorService } from '../services/ai/ticketAdvisor.service';
+import { AppError } from '../utils/AppError';
 import { ok, created } from '../utils/apiResponse';
 import { optionalNumber, optionalString, parseId, validate } from '../utils/validators';
 import { schemas } from '../validations/schemas';
@@ -29,6 +31,16 @@ export const ticketController = {
 
   async ticketQr(req: Request, res: Response) {
     return ok(res, await ticketService.getQr(parseId(req.params.id), req.user!));
+  },
+
+  /**
+   * POST /tickets/advice { habit?: string }  (AI tu van chon ve)
+   *   habit: mo ta thoi quen di lai bang loi; bo trong -> dua tren ve luot da mua 30 ngay qua
+   */
+  async advice(req: Request, res: Response) {
+    const habit = typeof req.body?.habit === 'string' ? req.body.habit.trim() : '';
+    if (habit.length > 500) throw AppError.badRequest('Mô tả thói quen tối đa 500 ký tự', 'VALIDATION_ERROR');
+    return ok(res, await ticketAdvisorService.advise({ userId: req.user!.userId, habitText: habit || undefined }));
   },
 
   /* ---------- Orders ---------- */

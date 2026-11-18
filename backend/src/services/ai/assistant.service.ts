@@ -26,7 +26,9 @@ import { ROUTING_CONFIG } from '../../config/routing.config';
 import { LocationInput, RoutePreference, RouteResult } from '../../types/routing.types';
 import { toTransportMode } from '../../types/transport.types';
 import { sunTimes } from '../../utils/sun';
+import { openingDay } from '../../utils/openingHours';
 import { currentHanoiTime, minutesToTime, timeToMinutes } from '../../utils/time';
+import { normalizeHabit, RIDE_MODES, TicketAdvice, ticketAdvisorService } from './ticketAdvisor.service';
 
 /* ============================== Kieu du lieu ============================== */
 export interface AssistantHistoryItem {
@@ -61,6 +63,8 @@ export interface AssistantReply {
   reply: string;
   routes: AssistantRouteSet[];
   places: AssistantPlaceCard[];
+  /** Ket qua cong cu recommend_ticket (the tu van chon ve) */
+  ticketAdvice: TicketAdvice | null;
   toolCalls: { name: string; ok: boolean }[];
   model: string | null;
   elapsedMs: number;
@@ -177,6 +181,33 @@ const TOOLS = [
           properties: { mode: { type: 'string', enum: ['BUS', 'METRO', 'BICYCLE', 'ELECTRIC_VEHICLE'], description: 'Bỏ trống = tất cả' } },
         },
       },
+      {
+        name: 'recommend_ticket',
+        description:
+          'Tư vấn nên mua VÉ THÁNG hay VÉ LƯỢT (và tiết kiệm bao nhiêu mỗi tháng) theo thói quen đi lại của người dùng: số lượt mỗi tuần theo phương tiện, ' +
+          'hoặc tuyến đi thường xuyên (hệ thống tự tìm lộ trình và giá từng chặng). Không truyền thói quen nào thì dùng vé lượt người dùng đã mua 30 ngày qua.',
+        parameters: {
+          type: 'object',
+          properties: {
+            trips: {
+              type: 'array',
+              description: 'Số lượt mỗi tuần theo phương tiện người dùng nêu (1 lượt = 1 lần lên xe/tàu; "mỗi ngày 2 lượt, 5 ngày/tuần" = 10). Không ghi lại chuyến đã mô tả bằng commute_*.',
+              items: {
+                type: 'object',
+                properties: {
+                  mode: { type: 'string', enum: RIDE_MODES },
+                  per_week: { type: 'number', description: 'Số lượt mỗi tuần' },
+                },
+                required: ['mode', 'per_week'],
+              },
+            },
+            commute_origin: placeParam('Nơi đi của tuyến đi thường xuyên (đi làm, đi học)'),
+            commute_destination: placeParam('Nơi đến của tuyến đi thường xuyên'),
+            commute_days_per_week: { type: 'number', description: 'Số ngày mỗi tuần đi tuyến đó (mặc định 5)' },
+            commute_round_trip: { type: 'boolean', description: 'Đi và về trong ngày (mặc định true)' },
+          },
+        },
+      },
     ],
   },
 ];
@@ -189,6 +220,7 @@ class ToolContext {
   /** So thu tu the lo trinh - cap NGAY khi AI goi (cac chang chay song song nhung giu dung thu tu) */
   private routeSeq = 0;
   places = new Map<number, AssistantPlaceCard>();
+  ticketAdvice: TicketAdvice | null = null;
   calls: { name: string; ok: boolean }[] = [];
 
   constructor(
@@ -263,6 +295,9 @@ class ToolContext {
           break;
         case 'get_ticket_prices':
           result = await this.ticketPrices(args);
+          break;
+        case 'recommend_ticket':
+          result = await this.recommendTicket(args);
           break;
         default:
           throw new AppError(400, `Không có công cụ ${call.name}`);
@@ -367,7 +402,7 @@ class ToolContext {
         leave: minutesToTime(clock),
         stay_minutes: stay,
         ...(info ? { opening_hours: info.openingHours ?? info.hoursSummary ?? null, ticket: info.ticketPrice ?? null } : {}),
-        ...(stay > 0 && info ? { warning: hoursWarning(info.hoursSummary, arrive, clock) } : {}),
+        ...(stay > 0 && info ? { warning: hoursWarning(info.hoursSummary, arrive, clock, info.openingHours) } : {}),
       });
       if (i === stops.length - 1) break;
       const next = stops[i + 1];
@@ -498,6 +533,40 @@ class ToolContext {
     return { ref: p.ref, name: p.name, note: 'Đây là một địa chỉ trên bản đồ, không có thông tin tham quan.' };
   }
 
+  /** Tu van chon ve: dung chung bo tinh cua trang Mua ve (tro ly tu dien giai -> explain: false) */
+  private async recommendTicket(args: Record<string, any>) {
+    const habit = normalizeHabit({
+      ...args,
+      // ref "attraction:ID" / "me" -> ten de bo tim dia diem hieu
+      commute_origin: refName(args.commute_origin, this.location),
+      commute_destination: refName(args.commute_destination, this.location),
+    });
+    const has = Boolean(habit.commute || habit.trips?.length);
+    const a = await ticketAdvisorService.advise({ userId: this.userId, habit: has ? habit : undefined, explain: false });
+    this.ticketAdvice = a;
+    const VERDICT: Record<string, string> = { BUY_PASS: 'nên mua vé tháng', KEEP_SINGLE: 'nên mua vé lượt', HAS_PASS: 'đang có vé tháng', SINGLE_ONLY: 'chỉ có vé lượt' };
+    return {
+      based_on: a.basis === 'habit' ? 'thói quen người dùng nêu' : a.basis === 'history' ? `vé lượt đã mua ${a.history.days} ngày qua` : 'chưa có dữ liệu',
+      understood: a.understood,
+      ...(a.commute ? { commute: a.commute } : {}),
+      per_vehicle: a.items.map((it) => ({
+        vehicle: it.label,
+        rides_per_month: it.ridesPerMonth,
+        single_tickets_cost_vnd: it.singleCost,
+        monthly_pass: it.pass ? { name: it.pass.name, price_vnd: it.pass.price } : null,
+        break_even_rides: it.breakEvenRides,
+        saving_vnd: it.saving,
+        verdict: VERDICT[it.verdict],
+        ...(it.activePass ? { active_pass: it.activePass } : {}),
+      })),
+      totals_vnd: a.totals,
+      summary: a.summary,
+      note:
+        'Thẻ tư vấn vé (có nút mua vé) hiện ngay dưới câu trả lời. HanoiGo chỉ bán đúng các loại vé trong kết quả này (mỗi phương tiện tối đa 1 loại vé tháng): ' +
+        'không nhắc vé 1 tuyến / liên tuyến, vé ưu tiên hay giá nào khác. Chưa biết thói quen thì hỏi người dùng đi phương tiện gì, bao nhiêu lượt mỗi tuần.',
+    };
+  }
+
   private async ticketPrices(args: Record<string, any>) {
     const list = await ticketService.ticketTypes({});
     const mode = typeof args.mode === 'string' ? args.mode.toUpperCase() : null;
@@ -514,6 +583,14 @@ class ToolContext {
       note: 'Chi phí từng lộ trình (theo bảng giá chặng) có trong kết quả plan_route. Có vé tháng thì đoạn đi phương tiện đó được miễn phí.',
     };
   }
+}
+
+/** Ref cua tro ly -> ten / toa do de bo tu van ve tim dia diem ("attraction:11" giu nguyen: placeSearch hieu ref) */
+function refName(v: unknown, location: { latitude: number; longitude: number } | null): string | undefined {
+  const s = String(v ?? '').replace(/<[^>]*>/g, ' ').trim();
+  if (!s) return undefined;
+  if (/^(me|vị trí hiện tại|vi tri hien tai)$/i.test(s)) return location ? `${location.latitude},${location.longitude}` : undefined;
+  return s;
 }
 
 function addMinutes(hhmm: string, minutes: number) {
@@ -550,14 +627,12 @@ export function visitMinutes(text?: string | null): number {
  * Canh bao gio mo cua tu HoursSummary ("8:00 – 17:00", "7:30 – 11:30, 13:30 – 18:00").
  * Bo phan trong ngoac (ghi chu mua / cuoi tuan); khong co khung gio ro rang -> khong canh bao.
  */
-export function hoursWarning(summary: string | null | undefined, arrive: number, leave: number): string | undefined {
+export function hoursWarning(summary: string | null | undefined, arrive: number, leave: number, fullText?: string | null): string | undefined {
   if (!summary) return undefined;
-  const main = summary.replace(/\([^)]*\)/g, '');
-  const wins = [...main.matchAll(/(\d{1,2})[:h](\d{2})\s*[–-]\s*(\d{1,2})[:h](\d{2})/g)].map((m) => [
-    Number(m[1]) * 60 + Number(m[2]),
-    Number(m[3]) * 60 + Number(m[4]),
-  ]);
-  if (wins.length === 0) return undefined;
+  // Co tinh gio mua dong / mua he va ngay nghi trong tuan (utils/openingHours.ts)
+  // (lich trinh co the cho ngay mai -> khong canh bao ngay nghi trong tuan, chi dung khung gio dung mua)
+  const wins = openingDay(summary, fullText).windows;
+  if (!wins || wins.length === 0) return undefined;
   const t = (x: number) => minutesToTime(x);
   const a = arrive % 1440;
   const l = a + (leave - arrive);
@@ -606,7 +681,7 @@ async function systemPrompt(hasLocation: boolean) {
     '2. Thiếu điểm đi hoặc điểm đến thì hỏi lại đúng 1 câu ngắn. Tên mơ hồ (vd. "ga", "chợ") thì dùng find_places rồi hỏi người dùng chọn nếu có nhiều kết quả khác nhau.',
     '3. Tiêu chí: "nhanh" → FASTEST, "rẻ/tiết kiệm" → CHEAPEST, "ít đi bộ/mỏi chân/trời nóng/mưa" → LEAST_WALKING, "ít đổi xe/ít chuyển" → FEWEST_TRANSFERS. Không nói gì → FASTEST.',
     '4. Lịch trình từ 3 điểm hoặc "lên lịch / lịch trình": gọi plan_itinerary MỘT lần (không gọi nhiều plan_route, không cần get_place_info trước). Hôm nay thì start_time không sớm hơn bây giờ. "Ngắm hoàng hôn" → đến nơi trước giờ mặt trời lặn 15–20 phút; "bình minh" → trước giờ mặt trời mọc: nếu kết quả không kịp thì giảm visit_minutes hoặc đổi start_time rồi gọi lại 1 lần. Kết quả có warning (đóng cửa...) thì đổi thứ tự / giờ và gọi lại 1 lần, hoặc nói rõ cho người dùng. Mọi giờ đến, giờ rời trong câu trả lời phải lấy ĐÚNG từ kết quả công cụ.',
-    '5. Hỏi nên đi đâu, gợi ý theo sở thích → suggest_places (truyền nguyên văn sở thích). Hỏi giờ mở cửa, giá vé tham quan, nên đi lúc nào → get_place_info. Hỏi giá vé xe → get_ticket_prices.',
+    '5. Hỏi nên đi đâu, gợi ý theo sở thích → suggest_places (truyền nguyên văn sở thích). Hỏi giờ mở cửa, giá vé tham quan, nên đi lúc nào → get_place_info. Hỏi giá vé xe → get_ticket_prices. Hỏi nên mua vé tháng hay vé lượt, mua vé gì cho tiết kiệm → recommend_ticket (truyền thói quen nếu người dùng đã nêu; chưa nêu thì gọi không tham số để dùng vé đã mua 30 ngày qua) rồi nêu kết luận và số tiền tiết kiệm.',
     '6. Trả lời bằng tiếng Việt, ngắn gọn, thân thiện. Với lộ trình: nêu phương án tốt nhất trước (tổng thời gian, giờ đến, chi phí, quãng đi bộ, số lần chuyển), rồi các bước chính (lên/xuống ở trạm nào, tuyến số mấy). Nhắc ngắn rằng có thể bấm "Xem trên bản đồ" ở thẻ lộ trình bên dưới. Không liệt kê lại toàn bộ dữ liệu.',
     '7. Chỉ dùng **in đậm** và gạch đầu dòng "- ", không dùng bảng, tiêu đề hay liên kết.',
     '8. Công cụ trả về lỗi (ngoài vùng hỗ trợ, không có lộ trình, không tìm thấy) thì giải thích dễ hiểu và đề xuất cách khác.',
@@ -710,6 +785,7 @@ export const assistantService = {
       reply,
       routes: [...ctx.routes].sort((a, b) => a.id - b.id),
       places: [...ctx.places.values()].slice(0, 6),
+      ticketAdvice: ctx.ticketAdvice,
       toolCalls: ctx.calls,
       model,
       elapsedMs: Date.now() - t0,

@@ -480,6 +480,7 @@ export interface AssistantReply {
   reply: string;
   routes: AssistantRouteSet[];
   places: AssistantPlaceCard[];
+  ticketAdvice: TicketAdvice | null;
   toolCalls: { name: string; ok: boolean }[];
   model: string | null;
   elapsedMs: number;
@@ -518,4 +519,62 @@ export interface SuggestionResult {
   query: string | null;
   items: Suggestion[];
   notice?: string;
+}
+
+/* ---------- AI: Tu van chon ve + Hoi dap tren trang dia diem ---------- */
+export type RideMode = Exclude<TransportMode, 'WALK'>;
+
+export interface TicketTypeRef {
+  ticketTypeId: number;
+  name: string;
+  price: number;
+}
+
+export interface TicketAdviceItem {
+  mode: RideMode;
+  label: string;
+  ridesPerMonth: number;
+  farePerRide: number;
+  singleCost: number;
+  single: TicketTypeRef | null;
+  pass: TicketTypeRef | null;
+  breakEvenRides: number | null;
+  saving: number | null;
+  verdict: 'BUY_PASS' | 'KEEP_SINGLE' | 'HAS_PASS' | 'SINGLE_ONLY';
+  activePass?: { name: string; daysLeft: number };
+}
+
+export interface TicketAdvice {
+  basis: 'habit' | 'history' | 'none';
+  understood: string[];
+  commute?: {
+    from: string;
+    to: string;
+    minutes: number;
+    farePerTrip: number;
+    tripsPerMonth: number;
+    summary: string;
+    monthlyCost: number;
+    fastest?: { minutes: number; summary: string; monthlyCost: number };
+    error?: string;
+  };
+  items: TicketAdviceItem[];
+  totals: { singleOnly: number; best: number; saving: number };
+  buy: TicketTypeRef[];
+  summary: string;
+  explanation: string;
+  question?: string | null;
+  history: { days: number; singleTickets: number; spent: number; trips: number };
+  mode: 'ai' | 'basic';
+  notice?: string;
+  model?: string | null;
+}
+
+export interface PlaceAnswer {
+  answer: string;
+  followUps: string[];
+  mode: 'ai' | 'basic';
+  notice?: string;
+  model?: string | null;
+  cached?: boolean;
 }

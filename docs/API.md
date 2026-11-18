@@ -199,15 +199,17 @@ Bổ sung:
 
 Danh sách phân trang trả về: `{ items, total, page, pageSize, totalPages }`.
 
-## 7. Trợ lý AI và gợi ý theo sở thích (Gemini)
+## 7. Trợ lý AI, gợi ý theo sở thích, tư vấn chọn vé, hỏi đáp địa điểm (Gemini)
 
-Cần `GEMINI_API_KEY` trong `backend/.env.local`. Không có khóa: gợi ý vẫn chạy bằng từ khóa (`mode: "basic"`), trợ lý trả `503 AI_NOT_CONFIGURED`.
+Cần `GEMINI_API_KEY` trong `backend/.env.local`. Không có khóa: gợi ý, tư vấn vé, hỏi đáp vẫn chạy bằng từ khóa (`mode: "basic"`), trợ lý trả `503 AI_NOT_CONFIGURED`.
 
 | Method | URL | Body / Query | Ghi chú |
 |---|---|---|---|
 | GET | `/attractions/suggestions` | `q?` (sở thích, ≤ 300 ký tự), `categories?`, `lat?`, `lng?`, `limit?` (≤ 12) | Đăng nhập tùy chọn; giới hạn 60 lần / 10 phút |
 | GET 🔒 | `/assistant/status` | | `{ configured, model, embeddingModel, availableModels }` |
 | POST 🔒 | `/assistant/chat` | `{ message, history?, location? }` | Giới hạn 40 câu / 10 phút / tài khoản |
+| POST 🔒 | `/tickets/advice` | `{ habit? }` (≤ 500 ký tự; bỏ trống = dựa trên vé lượt 30 ngày qua) | Tư vấn chọn vé. Giới hạn 20 lần / 10 phút / tài khoản |
+| POST 🔒 | `/attractions/:id/ask` | `{ question, history? }` (câu hỏi 2 – 300 ký tự; `history` tối đa 3 `{ question, answer }`) | Hỏi đáp trên trang địa điểm. Giới hạn 30 câu / 10 phút / tài khoản; `404 ATTRACTION_NOT_FOUND` |
 
 **`GET /attractions/suggestions`** – điểm mỗi địa điểm:
 
@@ -238,6 +240,42 @@ Cần `GEMINI_API_KEY` trong `backend/.env.local`. Không có khóa: gợi ý v�
 ```
 
 Công cụ Gemini được gọi (function calling): `find_places`, `plan_route`, `plan_itinerary` (lịch trình nhiều điểm, các chặng tính nối tiếp), `suggest_places`, `get_place_info`, `get_ticket_prices`. Mọi lộ trình, giờ, giá đều do backend tính – AI chỉ hiểu câu hỏi và diễn giải kết quả. Ref địa điểm: `attraction:ID`, `station:ID`, `geo:lat,lng`, `me`.
+
+**`POST /tickets/advice`**
+
+```json
+// Request
+{ "habit": "Đi làm từ Cầu Giấy đến Hồ Gươm, thứ 2 – thứ 6" }
+// Response data
+{ "basis": "habit",                       // habit | history (vé đã mua) | none
+  "understood": ["Khứ hồi Ga Cầu Giấy ⇄ Hồ Hoàn Kiếm, 5 ngày/tuần"],
+  "commute": { "from": "Ga Cầu Giấy", "to": "Hồ Hoàn Kiếm", "minutes": 52, "farePerTrip": 7000, "tripsPerMonth": 43, "summary": "Đi bộ → Xe buýt 34 → Đi bộ", "monthlyCost": 200000,
+               "fastest": { "minutes": 40, "summary": "Đi bộ → Xe điện công cộng EV-SHARE → Đi bộ", "monthlyCost": 430000 } },
+  "items": [{ "mode": "BUS", "label": "Xe buýt", "ridesPerMonth": 43, "farePerRide": 7000, "singleCost": 301000,
+              "single": { "ticketTypeId": 1, "name": "Vé lượt Bus", "price": 7000 }, "pass": { "ticketTypeId": 3, "name": "Vé tháng Bus", "price": 200000 },
+              "breakEvenRides": 29, "saving": 101000, "verdict": "BUY_PASS" }],   // BUY_PASS | KEEP_SINGLE | HAS_PASS (đã có vé tháng còn hạn) | SINGLE_ONLY
+  "totals": { "singleOnly": 301000, "best": 200000, "saving": 101000 },
+  "buy": [{ "ticketTypeId": 3, "name": "Vé tháng Bus", "price": 200000 }],
+  "summary": "Nên mua Vé tháng Bus: tiết kiệm khoảng 101.000đ mỗi tháng so với mua vé lượt.",
+  "explanation": "…2 – 4 câu tiếng Việt, chỉ dùng các số ở trên…",
+  "question": null,                        // mô tả chưa rõ → câu hỏi lại, items rỗng
+  "history": { "days": 30, "singleTickets": 12, "spent": 84000, "trips": 5 },   // vé lượt đã mua 30 ngày qua
+  "mode": "ai", "model": "gemini-3.5-flash-lite" }
+```
+
+Gemini chỉ tách mô tả thành số liệu (công cụ `record_travel_habit`: `trips[{ mode, per_week }]` hoặc quãng đi làm `commute_origin`, `commute_destination`, `commute_days_per_week`, `commute_round_trip`) và viết phần giải thích. Số lượt / tháng = lượt mỗi tuần × 30/7; giá lấy từ `TicketTypes`; quãng đi làm tìm đường lúc 07:30 với tiêu chí Nhanh nhất và Rẻ nhất (giá vé đầy đủ, không tính vé tháng đang có), chọn phương án rẻ nhất mỗi tháng trong giới hạn chậm hơn ≤ 20 phút. Trợ lý (`/assistant/chat`) có công cụ `recommend_ticket` cùng tham số, trả thêm `ticketAdvice` trong response.
+
+**`POST /attractions/:id/ask`**
+
+```json
+// Request
+{ "question": "Còn trẻ em thì sao?", "history": [{ "question": "Giá vé vào cửa bao nhiêu?", "answer": "Người lớn 30.000đ…" }] }
+// Response data
+{ "answer": "Trẻ em dưới 15 tuổi được **miễn phí** vé vào cửa…", "followUps": ["Giờ mở cửa thế nào?", "Đi xe buýt nào tới đây?"],
+  "mode": "ai", "model": "gemini-3.5-flash-lite", "cached": false }
+```
+
+Ngữ cảnh gửi Gemini chỉ gồm dữ liệu của địa điểm (giới thiệu, lịch sử, giờ mở cửa, giá vé, điểm nổi bật, thông tin nhanh, mốc lịch sử, kinh nghiệm, trạm gần kèm tuyến, địa điểm lân cận) và trạng thái mở cửa lúc hỏi (giờ theo mùa, ngày nghỉ – `utils/openingHours.ts`). Câu trả lời được cache 30 phút (trừ câu hỏi về "bây giờ / hôm nay"). Gemini lỗi → trả lời theo từ khóa, kèm `notice`.
 
 ## Ghi chú cho cả nhóm
 - JSON dùng **camelCase** (`stationId`, `stationName`...), repository đã alias từ cột PascalCase của SQL Server. Code cũ đọc `StationId` cần đổi sang `stationId`.

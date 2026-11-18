@@ -1,12 +1,13 @@
 /** Chon loai ve (ve luot / ve thang) -> tao Order -> chuyen sang trang thanh toan */
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ticketApi } from '../services/ticketApi';
 import { errorMessage } from '../services/api';
 import { useAsync } from '../utils/useAsync';
 import { useAuth } from '../context/AuthContext';
 import { ErrorBox, Loading } from '../components/Feedback';
 import { ModeBadge } from '../components/ModeBadge';
+import { TicketAdvisor } from '../components/TicketAdvisor';
 import { TicketType, TransportMode } from '../types';
 import { durationLabel, formatMoney } from '../utils/format';
 import { MODE_META } from '../utils/modes';
@@ -21,12 +22,18 @@ export default function BuyTicketPage() {
   );
 
   const { data: types, loading, error, reload } = useAsync(() => ticketApi.ticketTypes(), []);
+  const location = useLocation();
+  // Link "/tickets/buy#tu-van" (trang Ve cua toi) -> cuon toi khung tu van
+  useEffect(() => {
+    if (!loading && location.hash === '#tu-van') document.getElementById('tu-van')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [loading, location.hash]);
   const [qty, setQty] = useState<Record<number, number>>({});
   const [initialized, setInitialized] = useState(false);
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Den tu trang tim duong: tu chon san 1 ve luot cho moi phuong tien trong lo trinh
+  // Den tu trang tim duong: tu chon san 1 ve luot cho moi phuong tien trong lo trinh.
+  // ?select=3,4 (tu the tu van chon ve cua tro ly AI): chon san cac loai ve do
   useEffect(() => {
     if (!types || initialized) return;
     const init: Record<number, number> = {};
@@ -34,9 +41,18 @@ export default function BuyTicketPage() {
       const t = types.find((x) => x.mode === m && x.type === 'SINGLE');
       if (t) init[t.ticketTypeId] = 1;
     }
+    for (const id of (params.get('select') ?? '').split(',').map(Number)) {
+      if (types.some((x) => x.ticketTypeId === id)) init[id] = 1;
+    }
     setQty(init);
     setInitialized(true);
-  }, [types, initialized, routeModes]);
+  }, [types, initialized, routeModes, params]);
+
+  // Chon ve tu khung tu van -> them vao don hang, cuon toi o thanh toan
+  const pick = (ticketTypeId: number) => {
+    setQty((q) => ({ ...q, [ticketTypeId]: Math.max(1, q[ticketTypeId] ?? 0) }));
+    requestAnimationFrame(() => document.querySelector('.checkout')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  };
 
   const items = Object.entries(qty)
     .filter(([, q]) => q > 0)
@@ -84,6 +100,7 @@ export default function BuyTicketPage() {
       )}
       <div className="buy-grid">
         <div>
+          <TicketAdvisor onPick={pick} />
           {groups.map((g) => (
             <section key={g.type} className="section">
               <h2>{g.title}</h2>

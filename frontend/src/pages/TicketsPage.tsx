@@ -4,6 +4,7 @@ import { ticketApi } from '../services/ticketApi';
 import { useAsync } from '../utils/useAsync';
 import { Empty, ErrorBox, Loading } from '../components/Feedback';
 import { TicketCard } from '../components/TicketCard';
+import { Icon } from '../components/Icon';
 
 const TABS = [
   { key: '', label: 'Tất cả' },
@@ -24,6 +25,13 @@ export default function TicketsPage() {
           + Mua vé
         </Link>
       </div>
+      <Link to="/tickets/buy#tu-van" className="advisor-banner">
+        <Icon name="sparkles" size={18} />
+        <span>
+          <strong>Không biết nên mua vé tháng hay vé lượt?</strong> Kể thói quen đi lại, AI tính giúp bạn cách mua rẻ nhất.
+        </span>
+        <Icon name="chevronRight" size={18} />
+      </Link>
       <div className="tabs">
         {TABS.map((t) => (
           <button key={t.key} className={`tab${status === t.key ? ' active' : ''}`} onClick={() => setStatus(t.key)}>

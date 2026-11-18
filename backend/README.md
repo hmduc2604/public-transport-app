@@ -64,7 +64,8 @@ src/
 ├── repositories/                 user, transport, station, route, trip, attraction, ticket, order,
 │                                 payment, fareRule, tripHistory, transitNetwork, statistics
 ├── services/                     auth, transport, attraction, routing, ticket, order, tripHistory, admin, recommendation
-│   └── ai/                       gemini.client (gọi Gemini REST), placeSearch (tìm địa điểm theo tên), assistant (trợ lý)
+│   └── ai/                       gemini.client (gọi Gemini REST), placeSearch (tìm địa điểm theo tên), assistant (trợ lý),
+│                                 ticketAdvisor (tư vấn chọn vé), placeQa (hỏi đáp trên trang địa điểm)
 ├── controllers/                  auth, transport, attraction, routing, ticket, admin, assistant
 └── routes/                       *.routes.ts + index.ts (gắn vào /api/v1)
 ```
@@ -111,8 +112,11 @@ src/
 - Graph seed: 571 trạm → ~1.300 node, ~9.500 cạnh; mỗi lần tìm ~5–35 ms.
 
 **5. Chức năng AI (Gemini)** – `services/ai/*`, `services/recommendation.service.ts`
-- **Trợ lý lập lộ trình** (`POST /assistant/chat`): Gemini dùng *function calling* gọi 6 công cụ của backend (`find_places`, `plan_route`, `plan_itinerary`, `suggest_places`, `get_place_info`, `get_ticket_prices`). AI chỉ hiểu câu hỏi tiếng Việt và diễn giải; lộ trình vẫn do Dijkstra của nhóm tính, giờ / giá lấy từ DB → AI không bịa số tuyến hay giá vé.
+- **Trợ lý lập lộ trình** (`POST /assistant/chat`): Gemini dùng *function calling* gọi 7 công cụ của backend (`find_places`, `plan_route`, `plan_itinerary`, `suggest_places`, `get_place_info`, `get_ticket_prices`, `recommend_ticket`). AI chỉ hiểu câu hỏi tiếng Việt và diễn giải; lộ trình vẫn do Dijkstra của nhóm tính, giờ / giá lấy từ DB → AI không bịa số tuyến hay giá vé.
 - `plan_itinerary`: lịch trình nhiều điểm, các chặng tính **nối tiếp** (giờ đi chặng sau = giờ đến + thời gian tham quan đọc từ `VisitDuration`), cảnh báo điểm đã đóng cửa theo `HoursSummary`; lời dặn cho AI có giờ mặt trời mọc / lặn trong ngày (`utils/sun.ts`, công thức NOAA).
+- **Tư vấn chọn vé** (`POST /tickets/advice`, `services/ai/ticketAdvisor.service.ts`): Gemini bị buộc gọi hàm `record_travel_habit` (`toolConfig.functionCallingConfig.mode = ANY`) để tách câu mô tả thành số liệu có cấu trúc; phần so sánh vé lượt / vé tháng, điểm hòa vốn, tiết kiệm do backend tính từ `TicketTypes`, vé đã mua 30 ngày qua và vé tháng còn hạn. Quãng đi làm ("từ A đến B") gọi bộ tìm đường với 2 tiêu chí rồi chọn phương án rẻ nhất mỗi tháng (chậm hơn tối đa 20 phút). Không có Gemini → tách bằng từ khóa (`parseHabitBasic`), giải thích theo mẫu.
+- **Hỏi đáp trên trang địa điểm** (`POST /attractions/:id/ask`, `services/ai/placeQa.service.ts`): ngữ cảnh chỉ gồm dữ liệu của địa điểm trong DB + trạng thái mở cửa lúc hỏi; Gemini buộc gọi hàm `answer { answer, follow_ups }`, được dặn không có thông tin thì nói không có. Cache 30 phút theo (nội dung địa điểm, câu hỏi), bỏ qua cache với câu hỏi về "bây giờ / hôm nay". Lỗi Gemini → trả lời theo từ khóa.
+- **Giờ mở cửa theo mùa** (`utils/openingHours.ts`): đọc `HoursSummary` / `OpeningHours` dạng "8:00 – 17:30 (đông: 8:00 – 17:00), nghỉ T2", "(cuối tuần đến 22:00)" → khung giờ hôm nay, đã nghỉ hôm nay chưa. Mùa đông tháng 11 – 3; tháng 4 và 10 là giao mùa nên không khẳng định. Dùng cho hỏi đáp và cảnh báo giờ đóng cửa trong lịch trình của trợ lý.
 - **Gợi ý theo sở thích** (`GET /attractions/suggestions`): vector ngữ nghĩa `gemini-embedding-001` (768 chiều) cho mô tả các địa điểm, lưu ở bảng `AttractionEmbeddings` (chỉ tính lại khi nội dung đổi – so `ContentHash`) + lịch sử quan tâm ở `AttractionViews` → điểm `S = 0.5Q + 0.25H + 0.15C + 0.15D + 0.1P`. Mất kết nối Gemini thì tự chuyển sang khớp từ khóa.
 - Ổn định: thử lần lượt các model trong `GEMINI_MODEL` (model quá tải 503 / hết lượt miễn phí 429 / chậm → tự chuyển model khác và tạm bỏ qua model đó, hết lượt theo ngày thì bỏ qua đến khi Google cho gọi lại), chờ tối đa 12 giây mỗi model (lần thử cuối 25 giây), tối đa 6 vòng gọi công cụ, quá 40 giây thì buộc trả lời; giới hạn 40 câu / 10 phút / tài khoản. Không gửi email, số điện thoại, họ tên người dùng cho Gemini.
 - Cấu hình trong `backend/.env.local` (không đưa lên GitHub):

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { attractionService } from '../services/attraction.service';
 import { recommendationService } from '../services/recommendation.service';
+import { placeQaService, PlaceQaHistory } from '../services/ai/placeQa.service';
 import { ok } from '../utils/apiResponse';
 import { AppError } from '../utils/AppError';
 import { optionalNumber, optionalString, parseId } from '../utils/validators';
@@ -89,6 +90,24 @@ export const attractionController = {
     // Dang nhap -> ghi nhan quan tam de goi y "Danh cho ban"
     recommendationService.track(req.user?.userId, data.attractionId, 'VIEW');
     return ok(res, data);
+  },
+
+  /**
+   * POST /attractions/:id/ask { question, history?: [{ question, answer }] }  (AI hoi dap tren trang dia diem)
+   * Chi tra loi tu thong tin cua dia diem trong database.
+   */
+  async ask(req: Request, res: Response) {
+    const id = parseId(req.params.id);
+    const question = typeof req.body?.question === 'string' ? req.body.question.trim() : '';
+    if (question.length < 2) throw AppError.badRequest('Hãy nhập câu hỏi', 'VALIDATION_ERROR');
+    if (question.length > 300) throw AppError.badRequest('Câu hỏi tối đa 300 ký tự', 'VALIDATION_ERROR');
+    const history: PlaceQaHistory[] = Array.isArray(req.body?.history)
+      ? req.body.history
+          .slice(-3)
+          .filter((h: any) => h && typeof h.question === 'string' && typeof h.answer === 'string')
+          .map((h: any) => ({ question: h.question.slice(0, 300), answer: h.answer.slice(0, 1500) }))
+      : [];
+    return ok(res, await placeQaService.ask({ userId: req.user!.userId, attractionId: id, question, history }));
   },
 
   async nearbyStations(req: Request, res: Response) {

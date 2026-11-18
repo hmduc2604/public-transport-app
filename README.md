@@ -13,10 +13,10 @@ React + TypeScript + Leaflet  ──REST /api/v1 + JWT──>  Node.js + Express
 public-transport-app/
 ├── database/            ← Script SQL Server
 │   ├── 01_database.sql          Tạo DB PublicTransportDBV2 + 22 bảng + index
-│   ├── 02_seed.sql              Dữ liệu mẫu: 571 trạm vị trí thật, 22 tuyến (20 bus + Metro 2A, 3.1), 50 điểm tham quan...
+│   ├── 02_seed.sql              Dữ liệu mẫu: 571 trạm vị trí thật, 22 tuyến (20 bus + Metro 2A, 3.1), 34 điểm tham quan...
 │   ├── 03_test_queries.sql      Truy vấn kiểm thử (nearby, join, thống kê)
 │   ├── 04_upgrade_existing_db.sql  Dùng khi ĐÃ CÓ DB cũ, không muốn xóa dữ liệu
-│   ├── 05 … 13_*.sql            Nâng cấp DB đang chạy (ảnh, chi tiết địa điểm, xác nhận đăng ký, thanh toán, sửa dữ liệu, AI, 14 + 16 địa điểm mới) – chạy bằng upgrade-db.bat
+│   ├── 05 … 12_*.sql            Nâng cấp DB đang chạy (ảnh, chi tiết địa điểm, xác nhận đăng ký, thanh toán, sửa dữ liệu, AI, 14 địa điểm mới) – chạy bằng upgrade-db.bat
 │   └── 99_cleanup_test_data.sql Dọn trạm / tuyến do api-test tạo
 ├── backend/             ← API (tách riêng, xem backend/README.md)
 ├── frontend/            ← Giao diện React
@@ -39,7 +39,7 @@ Máy chưa cài SQL Server nên dùng SQL Server 2022 trong Docker (container `p
 |---|---|
 | `run-all.bat` | Bật Docker → bật SQL Server → tạo DB lần đầu → ghi `backend/.env` → `npm install` → chạy backend (cửa sổ "HanoiGo Backend") + frontend ("HanoiGo Frontend") → mở http://localhost:5173 |
 | `reset-db.bat` | Xóa container và tạo lại database + dữ liệu mẫu từ đầu (sau đó tắt/mở lại cửa sổ backend để băm lại mật khẩu seed) |
-| `api-test.bat` | Chạy 98 test API toàn luồng (gồm các trường hợp lỗi / bảo mật và chức năng AI), kết quả ở `api-test.log` |
+| `api-test.bat` | Chạy 109 test API toàn luồng (gồm các trường hợp lỗi / bảo mật và chức năng AI), kết quả ở `api-test.log` |
 | `stability-test.bat` | Kiểm tra độ ổn định: chịu tải đồng thời (≈ 3.000 request), thanh toán trùng cùng lúc, và **tắt SQL Server 10 giây** rồi bật lại để xem backend có tự phục hồi không. Chỉ chạy trên máy thử nghiệm; kết quả ở `stability-test.log` |
 | `upgrade-db.bat` | Cập nhật database đang chạy lên bản mới nhất (chạy lần lượt `05` → `12`, không xóa dữ liệu, chạy lại nhiều lần vẫn an toàn) |
 | `install-deps.bat` | Cài / cập nhật thư viện cho backend + frontend, xong tự khởi động lại 2 cửa sổ |
@@ -104,6 +104,8 @@ Vite đã cấu hình proxy `/api → http://localhost:5000`, nên không cần 
 8. Admin thêm trạm/tuyến mới → graph tìm đường tự xây lại → tìm đường thấy tuyến mới.
 9. **Trợ lý AI** (menu ✨ Trợ lý AI): gõ "Lên lịch nửa ngày: Văn Miếu → Hoàng thành Thăng Long → Hồ Tây ngắm hoàng hôn" → trợ lý trả lịch trình có giờ đến / giờ rời từng nơi, mỗi chặng 1 thẻ lộ trình → bấm **Xem trên bản đồ**. Hỏi tiếp "đi chậm thôi, ít đi bộ" để trợ lý tìm lại theo tiêu chí khác.
 10. Trang chủ → **Gợi ý cho bạn**: gõ sở thích ("kiến trúc Pháp, chụp ảnh buổi tối") → 4 địa điểm hợp nhất kèm lý do; đăng nhập `an@example.com` thì có thêm dòng "Dành cho bạn, dựa trên: …" (lịch sử đã xem / đã tìm đường).
+11. Vé → **Mua vé** → khung **Tư vấn chọn vé**: gõ "đi làm từ Cầu Giấy đến Hồ Gươm, thứ 2 – thứ 6" (hoặc bấm **Dựa trên vé tôi đã mua**) → hệ thống so tiền vé lượt cả tháng với vé tháng, ghi rõ tiết kiệm bao nhiêu → bấm **Chọn Vé tháng Bus** để thêm vào đơn.
+12. Mở trang **Văn Miếu - Quốc Tử Giám** → mục **Hỏi đáp**: hỏi "Giá vé bao nhiêu?", rồi hỏi tiếp "Còn trẻ em thì sao?", "Giờ này còn mở cửa không?" → AI trả lời chỉ dựa trên dữ liệu của địa điểm (giờ mở cửa theo mùa, giá vé, trạm gần).
 
 ## Nguồn dữ liệu vị trí trạm
 
@@ -132,13 +134,13 @@ Metro đi trên cao nên vẫn nối thẳng giữa các ga. Cấu hình trong `
 
 ## Địa điểm tham quan: thông tin và ảnh
 
-- **Thông tin chi tiết** cho 50 địa điểm: giới thiệu, lịch sử, điểm nổi bật, giờ mở cửa, giá vé (tra cứu 11/2026 – có thể thay đổi), thời gian tham quan gợi ý, thời điểm đẹp nhất, lưu ý khi tham quan, **thông tin nhanh** (năm xây dựng, xếp hạng di tích...) và **mốc lịch sử** (cả 50 địa điểm, mỗi nơi ít nhất 4 thông tin nhanh và 2 mốc). Thẻ ở mục **Khám phá** hiện nhanh địa chỉ, giờ mở cửa, thời gian tham quan, giá vé và số ảnh.
+- **Thông tin chi tiết** cho 34 địa điểm: giới thiệu, lịch sử, điểm nổi bật, giờ mở cửa, giá vé (tra cứu 11/2026 – có thể thay đổi), thời gian tham quan gợi ý, thời điểm đẹp nhất, lưu ý khi tham quan, **thông tin nhanh** (năm xây dựng, xếp hạng di tích...) và **mốc lịch sử** (cả 34 địa điểm, mỗi nơi ít nhất 4 thông tin nhanh và 2 mốc). Thẻ ở mục **Khám phá** hiện nhanh địa chỉ, giờ mở cửa, thời gian tham quan, giá vé và số ảnh.
 - **Trang chi tiết** (`pages/AttractionDetailPage.tsx`): ảnh phủ kín đầu trang + 3 ảnh xem trước, dải thông tin (giờ mở cửa, giá vé, thời gian tham quan, trạm gần nhất), cột phải "Đến bằng phương tiện công cộng" (mỗi trạm kèm số tuyến dừng tại đó và số phút đi bộ, bản đồ nhỏ, nút tìm lộ trình), trục mốc lịch sử, kinh nghiệm tham quan, bộ sưu tập ảnh và mục **Đi tiếp gần đây** (4 địa điểm trong bán kính 3 km). Thanh **mục lục** dính dưới menu (Tổng quan · Đi lại · Nổi bật · Lịch sử · Kinh nghiệm · Hình ảnh · Gần đây) tự sáng mục đang đọc, kèm nút Tìm đường; nút **Chia sẻ** mở bảng chia sẻ của điện thoại hoặc chép liên kết. Icon nét SVG (`components/Icon.tsx`) thay cho emoji để hiển thị giống nhau trên mọi máy.
 - **Ảnh**: 1 ảnh đại diện (phủ kín đầu trang chi tiết) + 3–5 ảnh bộ sưu tập mỗi địa điểm, xem phóng to bằng lightbox. Ảnh lấy từ [Wikimedia Commons](https://commons.wikimedia.org) (giấy phép tự do CC0 / Public domain / CC BY / CC BY-SA), lưu sẵn trong `frontend/public/images/attractions/` và `.../gallery/`.
 - **Ghi nguồn ảnh** (bắt buộc với CC BY / CC BY-SA): mục "Nguồn ảnh" thu gọn cuối trang chi tiết, cột `ImageCredit` / bảng `AttractionImages`, và file `frontend/public/images/attractions/CREDITS.md`.
 - Bảng mới `AttractionImages`; cột mới `HoursSummary`, `PriceFrom`, `VisitDuration`, `BestTime`, `Tips`, `Facts`, `Timeline` trong `TouristAttractions`. Admin sửa được tất cả, kể cả bộ sưu tập ảnh (mỗi dòng: `URL | chú thích | tác giả / giấy phép | link nguồn`), thông tin nhanh (`Nhãn | Giá trị`) và mốc lịch sử (`Năm | Sự kiện`).
 - Database đã có dữ liệu: chạy `upgrade-db.bat` (chạy `05_attraction_images.sql`, `06_attraction_details.sql`, `10_attraction_guide.sql`, không xóa dữ liệu khác).
-- Toàn bộ ảnh đã nằm sẵn trong repo (`frontend/public/images/attractions/`), không cần tải thêm.
+- Tải lại ảnh nếu thiếu: `download-images.bat` (chỉ tải file chưa có; Wikimedia giới hạn tốc độ nên mất khoảng 20–30 phút cho lần đầu).
 
 ## Đăng ký có xác nhận qua Email / SMS
 
@@ -182,7 +184,7 @@ TWILIO_FROM=+1xxxxxxxxxx
 
 Kiểm tra: mở `http://localhost:5000/api/v1/auth/verification-channels` → `"email": true` / `"sms": true` là đã sẵn sàng.
 
-## Chức năng AI: trợ lý lập lộ trình và gợi ý theo sở thích
+## Chức năng AI: trợ lý lập lộ trình, gợi ý theo sở thích, tư vấn chọn vé, hỏi đáp địa điểm
 
 Dùng Google **Gemini API**. Khóa đặt trong `backend/.env.local` (file này **không** được đưa lên GitHub):
 
@@ -196,6 +198,8 @@ Sau đó chạy `upgrade-db.bat` (có `11_ai_features.sql`: bảng `AttractionEm
 |---|---|---|
 | **Trợ lý lập lộ trình bằng tiếng Việt** | Menu **✨ Trợ lý AI** (`/assistant`, cần đăng nhập) | Gõ hoặc nói (nút micro) câu tự nhiên: "Từ Hồ Gươm đến Văn Miếu, đi bộ ít thôi", "Sáng mai 8h đi Hỏa Lò rồi Văn Miếu", "mình đang ở đây, muốn đi Lăng Bác" (bật **Dùng vị trí của tôi**). Gemini hiểu câu hỏi rồi gọi bộ tìm đường, dữ liệu địa điểm, bảng giá vé của hệ thống; trả lời tiếng Việt kèm **thẻ lộ trình** (3 phương án, mở trên bản đồ) và **thẻ địa điểm**. Lịch trình nhiều điểm được tính nối tiếp từng chặng, có cảnh báo nơi đã đóng cửa và giờ mặt trời lặn. Nhớ ngữ cảnh trong cuộc trò chuyện ("còn cách nào rẻ hơn không?"). |
 | **Gợi ý địa điểm theo sở thích** | Trang chủ → **Gợi ý cho bạn** | Gõ sở thích bất kỳ hoặc chọn nhanh (Lịch sử, Kiến trúc Pháp, Chụp ảnh, Ẩm thực…), có thể bấm **📍 Gần tôi**. Hệ thống so khớp **ngữ nghĩa** (vector Gemini) giữa sở thích và mô tả các địa điểm, cộng thêm lịch sử các nơi bạn đã xem / tìm đường tới, khoảng cách và độ phổ biến; mỗi gợi ý có lý do cụ thể. Không có khóa hoặc mất mạng → tự chuyển sang khớp từ khóa. |
+| **Tư vấn chọn vé** | **Vé → Mua vé** (khung trên cùng, `/tickets/buy#tu-van`), banner ở **Vé của tôi**, và trong **Trợ lý AI** ("đi buýt 2 lượt mỗi ngày, có nên mua vé tháng?") | Mô tả thói quen bằng lời ("metro 2 lượt mỗi ngày, 5 ngày/tuần", "đi làm từ Cầu Giấy đến Hồ Gươm") hoặc bấm **Dựa trên vé tôi đã mua** (vé lượt 30 ngày qua). Gemini chỉ tách thói quen thành số liệu; số lượt / tháng, tiền vé lượt, vé tháng, điểm hòa vốn, tiết kiệm đều do backend tính từ bảng giá. Với quãng đi làm, hệ thống tìm đường thật (Nhanh nhất + Rẻ nhất), chọn phương án rẻ nhất mỗi tháng mà chậm hơn không quá 20 phút. Đã có vé tháng còn hạn → báo "chưa cần mua". Bấm **Chọn** để thêm vé vào đơn. Mô tả chưa rõ → hỏi lại, không đoán. |
+| **Hỏi đáp trên trang địa điểm** | Trang chi tiết mỗi địa điểm → mục **Hỏi đáp** (cần đăng nhập) | Hỏi tự do: giá vé, giờ mở cửa, "giờ này còn mở không?", trẻ em, đi bằng xe buýt nào, gần đó có gì… AI chỉ trả lời từ dữ liệu của địa điểm trong database (giới thiệu, lịch sử, giờ mở cửa, giá vé, kinh nghiệm, trạm và địa điểm lân cận); không có thông tin thì nói không có. Giờ mở cửa tính **theo mùa** (giờ mùa đông tháng 11 – 3), ngày nghỉ trong tuần và giờ cuối tuần. Nhớ 3 câu hỏi trước để hỏi tiếp; gợi ý câu hỏi tiếp theo. Không có khóa / Gemini bận → trả lời theo từ khóa. |
 
 Chi tiết kỹ thuật: `backend/README.md` (mục 5), API: `docs/API.md` (mục 7). Khóa đã từng gửi qua chat / email nên **tạo khóa mới sau khi bảo vệ** và thay vào `.env.local`.
 
@@ -308,6 +312,19 @@ Gia cố thêm: bắt sự kiện lỗi của connection pool (`config/database.
 
 **Backend**: ghi log lỗi không bắt được (`uncaughtException`) và từng lượt gọi công cụ của trợ lý (`[AI] round …` trong `backend.log`) để dễ tìm nguyên nhân khi có sự cố.
 
+## Tư vấn chọn vé và hỏi đáp địa điểm (18/11/2026)
+
+| Kiểm tra | Kết quả |
+|---|---|
+| "Metro 2 lượt mỗi ngày, 5 ngày/tuần" | 43 lượt/tháng: vé lượt 645.000đ, vé tháng Metro 300.000đ → nên mua vé tháng, tiết kiệm 345.000đ |
+| "Đi làm từ Cầu Giấy đến Hồ Gươm, thứ 2 – thứ 6" | Tìm đường thật: xe buýt 34 (52 phút), 43 lượt/tháng → nên mua vé tháng Bus 200.000đ, tiết kiệm 101.000đ; ghi kèm phương án nhanh nhất để so sánh (xe điện 40 phút nhưng 430.000đ/tháng) |
+| Dựa trên vé đã mua (`an@example.com`) | Tính theo vé lượt 30 ngày qua của từng phương tiện; phương tiện không có vé tháng (xe đạp, xe điện) ghi "chỉ có vé lượt" |
+| Trợ lý AI: "đi buýt 2 lượt mỗi ngày, có nên mua vé tháng?" | Gọi công cụ `recommend_ticket`, trả thẻ tư vấn ngay trong cuộc trò chuyện |
+| Hỏi đáp Văn Miếu: giá vé → "còn trẻ em thì sao?" | Đúng giá trong DB (30.000đ / 15.000đ), hiểu câu hỏi nối tiếp (trẻ em dưới 15 tuổi miễn phí) |
+| "Giờ này còn mở cửa không?" lúc 17:29 tháng 11 | Trả lời đã đóng cửa lúc 17:00 (giờ mùa đông). Lỗi cũ: dùng giờ mùa hè. Trợ lý lập lịch trình cũng dùng giờ theo mùa |
+| `api-test.bat` | 109/109 (thêm 11 test: tư vấn vé, hỏi đáp, trợ lý gọi `recommend_ticket`; tự chờ rồi thử lại khi Gemini báo hết lượt / phút) |
+| Type-check backend + frontend | 0 lỗi |
+
 ## Bổ sung 14 địa điểm (17/11/2026)
 
 Tham khảo bài [Hà Nội đi đâu chơi? TOP 30++ địa điểm](https://www.vietnamairlines.com/th/vi/plan-book/travel/travel-guide/ha-noi-di-dau-choi) của Vietnam Airlines; chỉ lấy các điểm trong nội thành có trạm xe buýt / Metro / xe đạp công cộng gần (bỏ quán cà phê, karaoke, photobooth và các điểm ngoại thành không có tuyến của hệ thống).
@@ -319,50 +336,7 @@ Tham khảo bài [Hà Nội đi đâu chơi? TOP 30++ địa điểm](https://ww
 
 - Mỗi nơi đủ giới thiệu, lịch sử, điểm nổi bật, giờ mở cửa, giá vé (tra cứu 11/2026 – có thể thay đổi), thời gian tham quan, kinh nghiệm, ≥ 4 thông tin nhanh, ≥ 2 mốc lịch sử.
 - Tọa độ đặt ở lối vào / bờ hồ (không đặt giữa hồ), trạm gần nhất tính bằng **quãng đường đi bộ thật** (OSRM) – 3 trạm xe buýt, ga Metro nếu ≤ 1,2 km, trạm xe đạp / xe điện.
-- Ảnh: 9 địa điểm có ảnh đại diện + 5 ảnh bộ sưu tập từ Wikimedia Commons (ghi nguồn đầy đủ); ảnh cho Phố sách Đinh Lễ, Thủy cung Times City, Công viên nước Hồ Tây được bổ sung sau (xem mục *Bổ sung ảnh*). **Bảo tàng Thiên nhiên, Lotte Mall Tây Hồ chưa có ảnh giấy phép tự do** nên hiển thị nền màu theo loại địa điểm – có thể bổ sung ảnh tự chụp trong trang quản trị (Địa điểm → Sửa → Bộ sưu tập).
+- Ảnh: 9 địa điểm có ảnh đại diện + 5 ảnh bộ sưu tập từ Wikimedia Commons (ghi nguồn đầy đủ); Công viên nước Hồ Tây có 1 ảnh. **Phố sách Đinh Lễ, Bảo tàng Thiên nhiên, Thủy cung Times City, Lotte Mall Tây Hồ chưa có ảnh giấy phép tự do** nên hiển thị nền màu theo loại địa điểm – có thể bổ sung ảnh tự chụp trong trang quản trị (Địa điểm → Sửa → Bộ sưu tập).
 - Loại địa điểm mới: Công viên 🌳, Vui chơi 🎢, Mua sắm 🛍️; nhà thờ dùng icon ⛪. Trợ lý AI hiểu cả tên gọi quen thuộc ("vườn thú", "nhà sàn Bác", "Keangnam", "Lotte Tây Hồ"...).
 - Database đang chạy: `upgrade-db.bat` (có `12_more_attractions.sql`); cài mới: đã gộp vào `02_seed.sql` (mục 10b).
-
-## Bổ sung 16 địa điểm – nâng tổng số lên 50 (17/11/2026)
-
-Tự tìm thêm trên web (Lonely Planet, Rough Guides, vietnamtourism.com, Vietnam Airlines, VinWonders, báo Nhân Dân, Văn Hóa, VnExpress…) các điểm được giới thiệu nhiều nhất mà đồ án chưa có; ưu tiên nơi có trạm của hệ thống ở gần.
-
-| Nhóm | Địa điểm |
-|---|---|
-| Bảo tàng | Bảo tàng Phụ nữ Việt Nam, Bảo tàng Chiến thắng B-52, Bảo tàng Lịch sử Quân sự Việt Nam (cơ sở mới Đại lộ Thăng Long), Bảo tàng Phòng không – Không quân, Bảo tàng Hà Nội |
-| Đền, chùa | Đền Quán Thánh (Trấn Bắc), Đền Bạch Mã (Trấn Đông), Chùa Quán Sứ, Phủ Tây Hồ |
-| Di tích | Cột cờ Hà Nội, Ô Quan Chưởng, Ngôi nhà di sản 87 Mã Mây, Hồ Hữu Tiệp (xác máy bay B-52) |
-| Văn hóa, công viên, vui chơi | Con đường gốm sứ sông Hồng, Vườn Bách Thảo Hà Nội, Rạp xiếc Trung ương |
-
-- Thông tin tra cứu 11/2026: Cột cờ mở cửa từ 1/1/2025 (vé chung Hoàng thành); Bảo tàng Lịch sử Quân sự chuyển sang Đại lộ Thăng Long từ 1/11/2024, bán vé 40.000đ từ 12/4/2025; 87 Mã Mây thu phí 20.000đ từ 2/1/2025; Bảo tàng Hà Nội 50.000đ… (có thể thay đổi).
-- Tọa độ theo OpenStreetMap (Nominatim); trạm gần tính bằng quãng đường đi bộ thật (OSRM). Bảo tàng Lịch sử Quân sự nằm xa các tuyến của hệ thống (trạm gần nhất ~2 km đi bộ).
-- Ảnh Wikimedia Commons (ghi nguồn trong `CREDITS.md`): mỗi nơi có ảnh đại diện + 5 – 7 ảnh bộ sưu tập; riêng Rạp xiếc Trung ương mới có 1 ảnh bộ sưu tập (Commons có rất ít ảnh giấy phép tự do).
-- Trợ lý AI hiểu tên gọi quen thuộc: "Cột cờ", "Kỳ đài", "hồ B52", "bảo tàng quân sự", "phủ Tây Hồ", "87 Mã Mây", "rạp xiếc"...
-- Database đang chạy: `upgrade-db.bat` (có `13_more_attractions_2.sql`); cài mới: đã gộp vào `02_seed.sql` (mục 10c).
-
-## Bổ sung ảnh cho các địa điểm còn thiếu (17/11/2026)
-
-Tìm lại trên Wikimedia Commons (cả danh mục, mô tả tiếng Việt), Flickr (ảnh Creative Commons), Unsplash và Wikipedia:
-
-| Địa điểm | Trước | Sau |
-|---|---|---|
-| Phố sách Đinh Lễ | chưa có ảnh | ảnh đại diện (phố đi bộ Đinh Lễ) + 4 ảnh (tòa Bưu điện đầu phố, ảnh xưa thời Pháp) |
-| Thủy cung Times City | chưa có ảnh | ảnh đại diện (đường hầm kính) + 5 ảnh (bể cá, chim cánh cụt, rùa biển...) |
-| Công viên nước Hồ Tây | chỉ có ảnh đại diện | + 2 ảnh vòng quay bên Hồ Tây |
-| Đền Bạch Mã | 4 ảnh | 6 ảnh (thêm ban thờ, phù điêu) |
-| Bảo tàng Chiến thắng B-52 | 4 ảnh | 7 ảnh (thêm tòa bảo tàng, tên lửa SAM-2, MiG-21) |
-
-Database đang chạy: `upgrade-db.bat` (có `14_more_photos.sql`); cài mới: `02_seed.sql` mục 10d.
-
-### Ảnh cho Bảo tàng Thiên nhiên Việt Nam và Lotte Mall Tây Hồ (18/11/2026)
-
-Tìm lại lần hai (Wikimedia Commons theo tên và theo tọa độ quanh hai địa điểm, Openverse, Flickr với bộ lọc giấy phép CC) vẫn không có ảnh chụp nào có giấy phép tự do, nên dùng ảnh do nhóm sưu tầm:
-
-| Địa điểm | Ảnh đại diện | Bộ sưu tập |
-|---|---|---|
-| Bảo tàng Thiên nhiên Việt Nam | tòa nhà trưng bày với mô hình khủng long | 6 ảnh: cổng vào, phòng trưng bày tiến hóa, tủ hóa thạch, tủ sinh vật biển (ảnh của Báo VietNamNet), đường hầm thủy cung, bộ xương khủng long |
-| Lotte Mall Tây Hồ | mặt tiền lối vào chính | 6 ảnh: quảng trường, giếng trời, đèn bồ công anh, thang cuốn, hành lang, toàn cảnh (ảnh của Báo Lao Động) + 2 ảnh công trình năm 2022 (Ltn12345, CC BY-SA 4.0, xếp cuối) |
-
-- Nguồn ghi trên trang chi tiết: "Ảnh sưu tầm (nhóm HanoiGo cung cấp)", hoặc tên báo khi ảnh có logo báo. Ảnh sưu tầm không có giấy phép tự do: nếu biết nguồn gốc từng ảnh, sửa lại cột nguồn trong trang quản trị (Địa điểm → Sửa).
-- Database đang chạy: `upgrade-db.bat` (có `15_illustrations.sql`, `16_lotte_photos.sql`, `17_museum_photos.sql`); cài mới: `02_seed.sql` mục 10e, 10f, 10g.
 

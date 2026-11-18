@@ -8,11 +8,13 @@
  * Hoi thoai luu trong sessionStorage (dong tab la xoa). Ho tro noi bang giong (Chrome / Edge)
  * va gui vi tri hien tai (chi khi nguoi dung bat).
  */
-import { FormEvent, KeyboardEvent, ReactNode, useEffect, useRef, useState } from 'react';
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { aiApi } from '../services/aiApi';
 import { ApiError, errorMessage } from '../services/api';
-import { AssistantHistoryItem, AssistantPlaceCard, AssistantRouteSet } from '../types';
+import { AssistantHistoryItem, AssistantPlaceCard, AssistantRouteSet, TicketAdvice } from '../types';
+import { RichText } from '../components/RichText';
+import { TicketAdviceView } from '../components/TicketAdvisor';
 import { Icon, IconName } from '../components/Icon';
 import { categoryIcon } from '../components/AttractionCard';
 import { MODE_META, PREFERENCE_META } from '../utils/modes';
@@ -25,6 +27,7 @@ interface Msg {
   text: string;
   routes?: AssistantRouteSet[];
   places?: AssistantPlaceCard[];
+  ticketAdvice?: TicketAdvice | null;
   tools?: { name: string; ok: boolean }[];
   meta?: string;
   /** Loi -> hien nut Thu lai voi cau hoi nay */
@@ -38,7 +41,7 @@ const EXAMPLES: { icon: IconName; text: string }[] = [
   { icon: 'route', text: 'Từ Hồ Gươm đến Văn Miếu, đi bộ ít thôi' },
   { icon: 'map', text: 'Lên lịch nửa ngày: Văn Miếu → Hoàng thành Thăng Long → Hồ Tây ngắm hoàng hôn' },
   { icon: 'sparkles', text: 'Mình thích lịch sử và chụp ảnh, nên đi đâu?' },
-  { icon: 'ticket', text: 'Vé tháng xe buýt giá bao nhiêu? Có nên mua không?' },
+  { icon: 'ticket', text: 'Mình đi xe buýt 2 lượt mỗi ngày, thứ 2 – thứ 6. Có nên mua vé tháng không?' },
 ];
 
 const TOOL_LABEL: Record<string, string> = {
@@ -48,6 +51,7 @@ const TOOL_LABEL: Record<string, string> = {
   suggest_places: 'Gợi ý địa điểm',
   get_place_info: 'Tra thông tin địa điểm',
   get_ticket_prices: 'Tra giá vé',
+  recommend_ticket: 'Tư vấn chọn vé',
 };
 
 function loadChat(): Msg[] {
@@ -64,66 +68,6 @@ function saveChat(ms: Msg[]) {
   } catch {
     /* het dung luong / trinh duyet chan -> bo qua */
   }
-}
-
-/* ---------------- Hien thi van ban: **dam**, *nghieng*, gach dau dong, danh so ---------------- */
-function inline(text: string): ReactNode[] {
-  const out: ReactNode[] = [];
-  const re = /\*\*([^*]+)\*\*|\*([^*\s][^*]*?)\*/g;
-  let last = 0;
-  let k = 0;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text))) {
-    if (m.index > last) out.push(text.slice(last, m.index));
-    out.push(m[1] !== undefined ? <strong key={k++}>{m[1]}</strong> : <em key={k++}>{m[2]}</em>);
-    last = m.index + m[0].length;
-  }
-  if (last < text.length) out.push(text.slice(last));
-  return out;
-}
-
-function RichText({ text }: { text: string }) {
-  const lines = text.replace(/\r/g, '').split('\n');
-  const blocks: ReactNode[] = [];
-  let list: { ordered: boolean; items: { sub: boolean; text: string }[] } | null = null;
-  let para: string[] = [];
-  const flushPara = () => {
-    if (para.length) blocks.push(<p key={blocks.length}>{inline(para.join(' '))}</p>);
-    para = [];
-  };
-  const flushList = () => {
-    if (!list) return;
-    const items = list.items.map((it, i) => (
-      <li key={i} className={it.sub ? 'sub' : undefined}>
-        {inline(it.text)}
-      </li>
-    ));
-    blocks.push(list.ordered ? <ol key={blocks.length}>{items}</ol> : <ul key={blocks.length}>{items}</ul>);
-    list = null;
-  };
-  for (const raw of lines) {
-    const bullet = /^(\s*)[-*•]\s+(.*)$/.exec(raw);
-    const numbered = /^(\s*)\d+[.)]\s+(.*)$/.exec(raw);
-    if (bullet || numbered) {
-      flushPara();
-      const ordered = !bullet;
-      const [, indent, body] = (bullet ?? numbered)!;
-      if (!list || (list.ordered !== ordered && indent.length < 2)) {
-        flushList();
-        list = { ordered, items: [] };
-      }
-      list.items.push({ sub: indent.length >= 2, text: body });
-    } else if (!raw.trim()) {
-      flushPara();
-      flushList();
-    } else {
-      flushList();
-      para.push(raw.replace(/^#+\s*/, '').trim());
-    }
-  }
-  flushPara();
-  flushList();
-  return <div className="ai-text">{blocks}</div>;
 }
 
 /* ---------------- The lo trinh ---------------- */
@@ -313,6 +257,7 @@ export default function AssistantPage() {
           text: r.reply,
           routes: r.routes,
           places: r.places,
+          ticketAdvice: r.ticketAdvice,
           tools: r.toolCalls,
           meta: `${(r.elapsedMs / 1000).toFixed(1).replace('.', ',')} giây${r.model ? ` · ${r.model}` : ''}`,
         },
@@ -459,6 +404,7 @@ export default function AssistantPage() {
                     </div>
                     {m.routes?.map((set) => <AiRouteCard key={set.id} set={set} />)}
                     {m.places && m.places.length > 0 && <AiPlaces places={m.places} />}
+                    {m.ticketAdvice && m.ticketAdvice.items.length > 0 && <TicketAdviceView a={m.ticketAdvice} compact />}
                     {(m.tools?.length || m.meta) && (
                       <div className="ai-meta">
                         {m.tools && m.tools.length > 0 && <span>Đã tra: {toolSummary(m.tools)}</span>}

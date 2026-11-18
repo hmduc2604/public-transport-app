@@ -10,6 +10,16 @@ async function call(method, path, body, token) {
 const NO_FREE_PHOTOS = [];
 // Dia diem chi tim duoc it anh giay phep tu do tren Wikimedia Commons: so anh bo suu tap toi thieu
 const FEW_PHOTOS = { 'Phố sách Đinh Lễ': 4, 'Công viên nước Hồ Tây': 2, 'Rạp xiếc Trung ương': 1 };
+// Goi AI (Gemini ban mien phi gioi han so yeu cau / phut): gap 429 / 503 / 504 thi doi 20 giay roi thu lai (toi da 2 lan)
+async function aiCall(method, path, body, token) {
+  let r = await call(method, path, body, token);
+  for (let i = 0; i < 2 && [429, 503, 504].includes(r.status); i++) {
+    console.log(`      (Gemini ${r.status} - doi 20 giay roi thu lai)`);
+    await new Promise((ok) => setTimeout(ok, 20000));
+    r = await call(method, path, body, token);
+  }
+  return r;
+}
 function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${cond ? 'PASS' : 'FAIL'}  ${name} ${info}`); }
 (async () => {
   const SUF = Date.now().toString(36).toUpperCase(); // ma test khong trung giua cac lan chay
@@ -168,14 +178,41 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
   check('so thich qua dai -> 400', r.status === 400, r.j?.errorCode);
   r = await call('GET', '/assistant/status'); check('tro ly AI can dang nhap -> 401', r.status === 401, r.j?.errorCode);
   r = await call('POST', '/assistant/chat', { message: '   ' }, tok); check('tro ly: cau hoi rong -> 400', r.status === 400, r.j?.errorCode);
+  // ---- AI tu van chon ve (POST /tickets/advice) ----
+  const VERDICTS = ['BUY_PASS', 'KEEP_SINGLE', 'HAS_PASS', 'SINGLE_ONLY'];
+  r = await call('POST', '/tickets/advice', {}); check('tu van chon ve can dang nhap -> 401', r.status === 401, r.j?.errorCode);
+  r = await call('POST', '/tickets/advice', { habit: 'x'.repeat(501) }, tok); check('tu van: mo ta qua 500 ky tu -> 400', r.status === 400 && r.j.errorCode === 'VALIDATION_ERROR', r.j?.errorCode);
+  r = await call('POST', '/tickets/advice', {}, tok);
+  check('tu van theo ve da mua 30 ngay qua', r.status === 200 && r.j.data.basis === 'history' && r.j.data.history.singleTickets > 0 && r.j.data.items.length > 0 && r.j.data.items.every((x) => VERDICTS.includes(x.verdict)) && !!r.j.data.summary,
+    `${r.j?.data?.mode} ${r.j?.data?.items?.map((x) => `${x.mode} ${x.ridesPerMonth} luot ${x.verdict}`).join(', ')}`);
+  r = await call('POST', '/tickets/advice', { habit: 'Đi metro 2 lượt mỗi ngày, 5 ngày/tuần' }, tok);
+  { const m = r.j?.data?.items?.find((x) => x.mode === 'METRO');
+    check('tu van "metro 2 luot/ngay, 5 ngay/tuan" -> ~43 luot/thang, nen mua ve thang', r.status === 200 && r.j.data.basis === 'habit' && m?.ridesPerMonth === 43 && ['BUY_PASS', 'HAS_PASS'].includes(m.verdict) && !!m.pass && (m.verdict === 'HAS_PASS' || m.saving > 0),
+      m ? `${m.ridesPerMonth} luot, ve luot ${m.singleCost}d, ${m.pass?.name} ${m.pass?.price}d -> ${m.verdict} (tiet kiem ${m.saving}d) [${r.j.data.mode}]` : `${r.status} ${r.j?.message ?? ''}`); }
+  r = await call('POST', '/tickets/advice', { habit: 'abc' }, tok); check('tu van: mo ta khong ro -> hoi lai, khong goi y bua', r.status === 200 && r.j.data.items.length === 0 && !!r.j.data.question, (r.j?.data?.question ?? '').slice(0, 60));
+  // ---- AI hoi dap tren trang dia diem (POST /attractions/:id/ask) ----
+  r = await call('POST', '/attractions/11/ask', { question: 'Giá vé bao nhiêu?' }); check('hoi dap dia diem can dang nhap -> 401', r.status === 401, r.j?.errorCode);
+  r = await call('POST', '/attractions/11/ask', { question: ' ' }, tok); check('hoi dap: cau hoi rong -> 400', r.status === 400, r.j?.errorCode);
+  r = await call('POST', '/attractions/9999/ask', { question: 'Giá vé bao nhiêu?' }, tok); check('hoi dap: dia diem khong ton tai -> 404', r.status === 404, r.j?.errorCode);
+  r = await call('POST', '/attractions/11/ask', { question: 'Giá vé vào cửa bao nhiêu?' }, tok);
+  check('hoi dap Van Mieu: tra loi gia ve tu du lieu', r.status === 200 && /\d/.test(r.j.data.answer) && /đ|đồng|miễn phí/i.test(r.j.data.answer) && Array.isArray(r.j.data.followUps), `[${r.j?.data?.mode}] ${(r.j?.data?.answer ?? r.j?.message ?? '').slice(0, 90).replace(/\s+/g, ' ')}`);
   if (aiOn) {
-    r = await call('POST', '/assistant/chat', { message: 'Từ Hồ Gươm đến Văn Miếu, đi bộ ít thôi' }, tok);
+    const a1 = r.j?.data?.answer ?? '';
+    r = await call('POST', '/attractions/11/ask', { question: 'Còn trẻ em thì sao?', history: [{ question: 'Giá vé vào cửa bao nhiêu?', answer: a1 }] }, tok);
+    check('hoi dap: cau hoi noi tiep hieu theo ngu canh (tre em)', r.status === 200 && /trẻ em|dưới|tuổi|miễn phí|giảm/i.test(r.j.data.answer), (r.j?.data?.answer ?? '').slice(0, 90).replace(/\s+/g, ' '));
+    r = await aiCall('POST', '/assistant/chat', { message: 'Mình đi xe buýt 2 lượt mỗi ngày, thứ 2 – thứ 6. Có nên mua vé tháng không?' }, tok);
+    const bus = r.j?.data?.ticketAdvice?.items?.find((x) => x.mode === 'BUS');
+    check('tro ly: hoi ve thang -> goi recommend_ticket, tra the tu van', r.status === 200 && r.j.data.toolCalls.some((t) => t.name === 'recommend_ticket') && bus?.ridesPerMonth === 43,
+      bus ? `BUS ${bus.ridesPerMonth} luot ${bus.verdict}` : `${r.status} ${r.j?.message ?? JSON.stringify(r.j?.data?.toolCalls)}`);
+  }
+  if (aiOn) {
+    r = await aiCall('POST', '/assistant/chat', { message: 'Từ Hồ Gươm đến Văn Miếu, đi bộ ít thôi' }, tok);
     const rs = r.j?.data?.routes?.[0];
     check('tro ly: hieu cau hoi -> goi bo tim duong', r.status === 200 && rs && rs.fromRef === 'attraction:1' && rs.toRef === 'attraction:11' && rs.preference === 'LEAST_WALKING' && rs.routes.length > 0,
       `${r.status} ${rs ? `${rs.from} -> ${rs.to} [${rs.preference}]` : r.j?.message} ${r.j?.data?.elapsedMs ?? ''}ms`);
     check('tro ly: tra loi bang tieng Viet', r.status === 200 && /phút|đi bộ|tuyến|xe/i.test(r.j.data.reply), (r.j?.data?.reply ?? '').slice(0, 80).replace(/\s+/g, ' '));
     check('tro ly: khong lo ma noi bo (attraction:..) trong cau tra loi', r.status === 200 && !/(attraction|station):\d/.test(r.j.data.reply));
-    r = await call('POST', '/assistant/chat', { message: 'Lên lịch trình: 8 giờ sáng mai mình ở Nhà hát Lớn, đi Nhà tù Hỏa Lò rồi Văn Miếu' }, tok);
+    r = await aiCall('POST', '/assistant/chat', { message: 'Lên lịch trình: 8 giờ sáng mai mình ở Nhà hát Lớn, đi Nhà tù Hỏa Lò rồi Văn Miếu' }, tok);
     const legs = r.j?.data?.routes ?? [];
     const l1 = legs[0], l2 = legs[1];
     const toMin = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
@@ -184,7 +221,7 @@ function check(name, cond, info = '') { cond ? pass++ : fail++; console.log(`${c
       l1.fromRef === 'attraction:5' && l1.toRef === 'attraction:6' && l2.toRef === 'attraction:11' && l1.departureTime === '08:00' &&
       toMin(l2.departureTime) >= toMin(l1.departureTime) + l1.routes[0].totalDuration,
       legs.map((x) => `${x.from} -> ${x.to} ${x.departureTime}`).join(' | ') || r.j?.message);
-    r = await call('POST', '/assistant/chat', { message: 'Viết giúp mình một bài thơ về mùa thu' }, tok);
+    r = await aiCall('POST', '/assistant/chat', { message: 'Viết giúp mình một bài thơ về mùa thu' }, tok);
     check('tro ly: cau hoi ngoai pham vi -> tu choi, khong goi cong cu', r.status === 200 && r.j.data.routes.length === 0 && r.j.data.toolCalls.length === 0, (r.j?.data?.reply ?? '').slice(0, 80).replace(/\s+/g, ' '));
   }
   console.log(`\n${pass} PASS, ${fail} FAIL`);
