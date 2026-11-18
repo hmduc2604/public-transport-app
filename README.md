@@ -138,7 +138,7 @@ Metro đi trên cao nên vẫn nối thẳng giữa các ga. Cấu hình trong `
 - **Ghi nguồn ảnh** (bắt buộc với CC BY / CC BY-SA): mục "Nguồn ảnh" thu gọn cuối trang chi tiết, cột `ImageCredit` / bảng `AttractionImages`, và file `frontend/public/images/attractions/CREDITS.md`.
 - Bảng mới `AttractionImages`; cột mới `HoursSummary`, `PriceFrom`, `VisitDuration`, `BestTime`, `Tips`, `Facts`, `Timeline` trong `TouristAttractions`. Admin sửa được tất cả, kể cả bộ sưu tập ảnh (mỗi dòng: `URL | chú thích | tác giả / giấy phép | link nguồn`), thông tin nhanh (`Nhãn | Giá trị`) và mốc lịch sử (`Năm | Sự kiện`).
 - Database đã có dữ liệu: chạy `upgrade-db.bat` (chạy `05_attraction_images.sql`, `06_attraction_details.sql`, `10_attraction_guide.sql`, không xóa dữ liệu khác).
-- Tải lại ảnh nếu thiếu: `download-images.bat` (chỉ tải file chưa có; Wikimedia giới hạn tốc độ nên mất khoảng 20–30 phút cho lần đầu).
+- Toàn bộ ảnh đã nằm sẵn trong repo (`frontend/public/images/attractions/`), không cần tải thêm.
 
 ## Đăng ký có xác nhận qua Email / SMS
 
@@ -364,6 +364,5 @@ Tìm lại lần hai (Wikimedia Commons theo tên và theo tọa độ quanh hai
 | Lotte Mall Tây Hồ | mặt tiền lối vào chính | 6 ảnh: quảng trường, giếng trời, đèn bồ công anh, thang cuốn, hành lang, toàn cảnh (ảnh của Báo Lao Động) + 2 ảnh công trình năm 2022 (Ltn12345, CC BY-SA 4.0, xếp cuối) |
 
 - Nguồn ghi trên trang chi tiết: "Ảnh sưu tầm (nhóm HanoiGo cung cấp)", hoặc tên báo khi ảnh có logo báo. Ảnh sưu tầm không có giấy phép tự do: nếu biết nguồn gốc từng ảnh, sửa lại cột nguồn trong trang quản trị (Địa điểm → Sửa).
-- Ảnh minh họa vẽ trước đó (file SVG ở `docs/illustrations/`) không còn dùng.
 - Database đang chạy: `upgrade-db.bat` (có `15_illustrations.sql`, `16_lotte_photos.sql`, `17_museum_photos.sql`); cài mới: `02_seed.sql` mục 10e, 10f, 10g.
 
